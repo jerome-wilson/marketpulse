@@ -37,6 +37,8 @@ void print_usage(const char *program_name) {
     printf("  %s status                      Show system status\n", program_name);
     printf("  %s stats                       Show performance metrics\n", program_name);
     printf("  %s simulate-failure            Run failure simulation\n", program_name);
+    printf("  %s top                         Show top market movers\n", program_name);
+    printf("  %s stream [SYMBOL...]          Stream live JSON to named pipe\n", program_name);
     printf("  %s daemon start|stop|status    Daemon control\n", program_name);
     printf("  %s --help                      Show this help message\n", program_name);
     
@@ -313,7 +315,44 @@ int parse_command(int argc, char *argv[], ParsedCommand *cmd) {
         cmd->type = CMD_SIMULATE_FAILURE;
         return 0;
     }
-    
+
+    /* Check for top movers command */
+    if (strcmp(argv[1], "top") == 0 || strcmp(argv[1], "TOP") == 0 ||
+        strcmp(argv[1], "movers") == 0) {
+        cmd->type = CMD_TOP;
+        return 0;
+    }
+
+    /* Check for stream command (mkfifo live feed) */
+    if (strcmp(argv[1], "stream") == 0 || strcmp(argv[1], "STREAM") == 0) {
+        cmd->type = CMD_STREAM;
+        if (argc < 3) {
+            /* Default to tech stocks when no symbols given */
+            for (i = 0; i < TECH_STOCKS_COUNT && i < MAX_STOCKS; i++) {
+                strncpy(cmd->symbols[i], TECH_STOCKS[i], MAX_SYMBOL_LENGTH - 1);
+                cmd->symbols[i][MAX_SYMBOL_LENGTH - 1] = '\0';
+            }
+            cmd->symbol_count = TECH_STOCKS_COUNT;
+            return 0;
+        }
+        for (i = 2; i < argc && cmd->symbol_count < MAX_STOCKS; i++) {
+            if (argv[i][0] == '-') continue;
+            if (!is_valid_symbol(argv[i])) {
+                fprintf(stderr, "Warning: Invalid symbol '%s' - skipping\n", argv[i]);
+                continue;
+            }
+            strncpy(cmd->symbols[cmd->symbol_count], argv[i], MAX_SYMBOL_LENGTH - 1);
+            cmd->symbols[cmd->symbol_count][MAX_SYMBOL_LENGTH - 1] = '\0';
+            str_to_upper(cmd->symbols[cmd->symbol_count]);
+            cmd->symbol_count++;
+        }
+        if (cmd->symbol_count == 0) {
+            fprintf(stderr, "Error: No valid symbols provided for stream\n");
+            return -1;
+        }
+        return 0;
+    }
+
     /* Check for daemon command */
     if (strcmp(argv[1], "daemon") == 0) {
         if (argc < 3) {

@@ -82,7 +82,15 @@ int main(int argc, char *argv[]) {
         case CMD_SIMULATE_FAILURE:
             result = run_failure_simulation();
             break;
-            
+
+        case CMD_TOP:
+            result = display_top_movers();
+            break;
+
+        case CMD_STREAM:
+            result = run_stream_mode(cmd.symbols, cmd.symbol_count);
+            break;
+
         case CMD_DAEMON_START:
             printf("Starting MarketPulse daemon...\n");
             if (is_daemon_running()) {

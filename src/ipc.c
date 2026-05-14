@@ -77,13 +77,12 @@ int shm_create(key_t key, size_t size) {
  */
 int shm_open(key_t key) {
     int shmid;
-    
+
     shmid = shmget(key, 0, 0666);
     if (shmid == -1) {
-        perror("shmget (open)");
         return -1;
     }
-    
+
     return shmid;
 }
 
@@ -423,7 +422,6 @@ SharedMemory *shm_attach_worker(void) {
     /* Open existing shared memory */
     g_shmid = shm_open(SHM_STOCK_DATA);
     if (g_shmid == -1) {
-        fprintf(stderr, "Failed to open shared memory\n");
         return NULL;
     }
     
