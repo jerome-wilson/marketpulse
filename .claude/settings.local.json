@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./marketpulse stats *)",
+      "Bash(./marketpulse status *)"
+    ]
+  }
+}

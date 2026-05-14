@@ -191,8 +191,8 @@ int simulate_failure(FailureType type) {
             return -2;
             
         case FAILURE_API_DELAY:
-            log_warn("SIMULATED: API delay (5 seconds)");
-            sleep(5);
+            log_warn("SIMULATED: API delay (800ms)");
+            usleep(800000);
             return 0;
             
         case FAILURE_RANDOM:
@@ -209,15 +209,17 @@ int simulate_failure(FailureType type) {
 int run_failure_simulation(void) {
     printf("\n%s%s=== MarketPulse Failure Simulation Mode ===%s\n\n",
            COLOR_BOLD, COLOR_YELLOW, COLOR_RESET);
-    
+
     printf("This mode tests system resilience by simulating:\n");
     printf("  1. Worker process crashes\n");
     printf("  2. Network failures\n");
     printf("  3. API response delays\n");
     printf("  4. Random failures\n\n");
-    
+
     printf("Starting simulation with 30%% failure probability...\n\n");
-    
+
+    /* Suppress logger during display so output stays clean */
+    logger_set_level(LOG_FATAL);
     set_failure_simulation(FAILURE_RANDOM, 30);
     
     /* Simulate 10 operations */
@@ -255,8 +257,9 @@ int run_failure_simulation(void) {
     printf("  Failed operations:     %s%d%s\n", COLOR_RED, failures, COLOR_RESET);
     printf("  Recovery rate:         %s100%%%s\n", COLOR_GREEN, COLOR_RESET);
     printf("\nSystem demonstrated fault tolerance and self-healing capabilities.\n\n");
-    
+
     set_failure_simulation(FAILURE_NONE, 0);
+    logger_set_level(LOG_INFO);
     return 0;
 }
 
@@ -428,8 +431,42 @@ int display_performance_stats(void) {
         }
         
     } else {
-        printf("No statistics available. Start monitoring first.\n");
-        printf("Run: ./marketpulse watch AAPL MSFT\n");
+        struct rusage usage;
+
+        printf("%s[Session Statistics]%s\n", COLOR_BOLD, COLOR_RESET);
+        printf("  Status:             %sStandby%s — no active monitoring session\n",
+               COLOR_YELLOW, COLOR_RESET);
+        printf("  Tip:                Run %s./marketpulse watch AAPL MSFT GOOGL%s to start\n\n",
+               COLOR_CYAN, COLOR_RESET);
+
+        printf("%s[System Configuration]%s\n", COLOR_BOLD, COLOR_RESET);
+        printf("  Max parallel workers:    %d  (one per stock via fork)\n", MAX_WORKERS);
+        printf("  Max monitored stocks:    %d  (POSIX shared memory)\n", MAX_SHARED_STOCKS);
+        printf("  IPC mechanism:           Shared memory + semaphore reader-writer lock\n");
+        printf("  Rate limit policy:       Token bucket  —  60 req/min, refills 1/sec\n");
+        printf("  Retry policy:            Exponential backoff  —  5 attempts, base 1s\n");
+        printf("  Daemon support:          Double-fork + PID file + SIGUSR1/2 control\n");
+
+        printf("\n%s[Rate Limiter]%s\n", COLOR_BOLD, COLOR_RESET);
+        printf("  Tokens available:   %s%d / %d%s  (ready to fetch)\n",
+               COLOR_GREEN, rate_limiter_tokens(), g_rate_limiter.max_tokens, COLOR_RESET);
+        printf("  Refill rate:        %d token/sec\n", g_rate_limiter.refill_rate);
+
+        printf("\n%s[Process Info]%s\n", COLOR_BOLD, COLOR_RESET);
+        printf("  Current PID:        %d\n", getpid());
+        if (getrusage(RUSAGE_SELF, &usage) == 0) {
+            printf("  Memory (RSS):       %ld KB\n", usage.ru_maxrss / 1024);
+            printf("  User CPU:           %ld.%03ld sec\n",
+                   usage.ru_utime.tv_sec, usage.ru_utime.tv_usec / 1000);
+        }
+
+        printf("\n%s[Supported Commands]%s\n", COLOR_BOLD, COLOR_RESET);
+        printf("  %-38s  Single stock quote\n",   "./marketpulse AAPL");
+        printf("  %-38s  Live multi-stock watch\n","./marketpulse watch AAPL MSFT GOOGL");
+        printf("  %-38s  NIFTY50 Indian market\n", "./marketpulse watch nifty50");
+        printf("  %-38s  Price alert with signal\n","./marketpulse alert AAPL 300");
+        printf("  %-38s  Fault-tolerance demo\n",  "./marketpulse simulate-failure");
+        printf("  %-38s  Daemon mode\n",            "./marketpulse daemon start");
     }
     
     printf("\n");

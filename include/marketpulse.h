@@ -94,7 +94,9 @@ typedef enum {
     CMD_SIMULATE_FAILURE,   /* Failure simulation mode */
     CMD_DAEMON_START,       /* Start daemon */
     CMD_DAEMON_STOP,        /* Stop daemon */
-    CMD_DAEMON_STATUS       /* Daemon status */
+    CMD_DAEMON_STATUS,      /* Daemon status */
+    CMD_TOP,                /* Top market movers */
+    CMD_STREAM              /* Live FIFO stream (mkfifo) */
 } CommandType;
 
 /* Failure simulation types */
@@ -190,8 +192,12 @@ double json_get_number(const char *json, const char *key);
 int start_monitoring(ParsedCommand *cmd);
 int fetch_and_display_single(const char *symbol);
 int fetch_and_display_multiple(char symbols[][MAX_SYMBOL_LENGTH], int count, int continuous);
-void display_stock_table(StockData *stocks, int count);
+void display_stock_table(StockData *stocks, PriceHistory *histories, int count);
+int display_top_movers(void);
 void clear_screen(void);
+
+/* stream.c */
+int run_stream_mode(char symbols[][MAX_SYMBOL_LENGTH], int count);
 
 /* alert.c */
 int start_alert_monitoring(const char *symbol, double threshold);
