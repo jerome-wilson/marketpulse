@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(./marketpulse stats *)",
-      "Bash(./marketpulse status *)"
+      "Bash(./marketpulse status *)",
+      "Read(//Users/I578449/Systems-Programming-Project/procscope/**)",
+      "Bash(make)"
     ]
   }
 }
