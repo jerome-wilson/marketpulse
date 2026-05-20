@@ -281,9 +281,11 @@ void analyze_stock(PriceHistory *history, AIInsight *insight) {
     trend_signal = detect_ma_crossover(history);
     
     /* Store calculated values */
-    insight->moving_avg_5 = (ma5 > 0) ? ma5 : 0;
+    insight->moving_avg_5  = (ma5  > 0) ? ma5  : 0;
     insight->moving_avg_10 = (ma10 > 0) ? ma10 : 0;
-    insight->volatility = volatility;
+    insight->volatility    = volatility;
+    insight->rsi           = rsi;
+    insight->ma_crossover  = trend_signal;
     
     /* Determine trend */
     if (trend_signal > 0 || momentum > 2) {
@@ -383,7 +385,24 @@ void print_ai_insight(AIInsight *insight, const char *symbol) {
     if (insight->volatility > 0) {
         printf("  📈 Volatility: %s%.2f\n", currency_symbol, insight->volatility);
     }
-    
+
+    if (insight->rsi > 0) {
+        const char *rsi_color = (insight->rsi > 70) ? COLOR_RED :
+                                (insight->rsi < 30) ? COLOR_GREEN : COLOR_YELLOW;
+        const char *rsi_note  = (insight->rsi > 70) ? " Overbought" :
+                                (insight->rsi < 30) ? " Oversold" : "";
+        printf("  📊 RSI(14):    %s%.1f%s%s\n",
+               rsi_color, insight->rsi, rsi_note, COLOR_RESET);
+    }
+
+    if (insight->ma_crossover > 0) {
+        printf("  ✨ Signal:     %sGolden Cross%s (MA5 above MA10)\n",
+               COLOR_GREEN, COLOR_RESET);
+    } else if (insight->ma_crossover < 0) {
+        printf("  ⚠  Signal:     %sDeath Cross%s (MA5 below MA10)\n",
+               COLOR_RED, COLOR_RESET);
+    }
+
     printf("\n");
     printf("  %s💡 Analysis:%s\n", COLOR_BOLD, COLOR_RESET);
     printf("  %s\n", insight->recommendation);

@@ -39,6 +39,7 @@ void print_usage(const char *program_name) {
     printf("  %s simulate-failure            Run failure simulation\n", program_name);
     printf("  %s top                         Show top market movers\n", program_name);
     printf("  %s stream [SYMBOL...]          Stream live JSON to named pipe\n", program_name);
+    printf("  %s insight <SYMBOL>            Get AI analysis for a stock\n", program_name);
     printf("  %s daemon start|stop|status    Daemon control\n", program_name);
     printf("  %s --help                      Show this help message\n", program_name);
     
@@ -162,8 +163,8 @@ static int is_valid_symbol(const char *symbol) {
     int len = strlen(symbol);
     int i;
     
-    /* Check length (1-5 characters typical for US stocks) */
-    if (len < 1 || len > 10) {
+    /* Check length (1-15 characters to support Indian stocks like RELIANCE.BSE) */
+    if (len < 1 || len > 15) {
         return 0;
     }
     
@@ -350,6 +351,29 @@ int parse_command(int argc, char *argv[], ParsedCommand *cmd) {
             fprintf(stderr, "Error: No valid symbols provided for stream\n");
             return -1;
         }
+        return 0;
+    }
+
+    /* Check for insight command (AI analysis for single stock) */
+    if (strcmp(argv[1], "insight") == 0 || strcmp(argv[1], "INSIGHT") == 0 ||
+        strcmp(argv[1], "analyze") == 0 || strcmp(argv[1], "ai") == 0) {
+        cmd->type = CMD_INSIGHT;
+        
+        if (argc < 3) {
+            fprintf(stderr, "Error: 'insight' command requires a stock symbol\n");
+            fprintf(stderr, "Usage: %s insight SYMBOL\n", argv[0]);
+            return -1;
+        }
+        
+        if (!is_valid_symbol(argv[2])) {
+            fprintf(stderr, "Error: Invalid stock symbol '%s'\n", argv[2]);
+            return -1;
+        }
+        
+        strncpy(cmd->symbols[0], argv[2], MAX_SYMBOL_LENGTH - 1);
+        cmd->symbols[0][MAX_SYMBOL_LENGTH - 1] = '\0';
+        str_to_upper(cmd->symbols[0]);
+        cmd->symbol_count = 1;
         return 0;
     }
 

@@ -285,8 +285,8 @@ void sleep_ms(int milliseconds) {
  * Uses ANSI escape codes
  */
 void clear_screen(void) {
-    /* ANSI escape code to clear screen and move cursor to top-left */
-    printf("\033[2J\033[H");
+    /* Hide cursor + clear screen + move to top-left to suppress flicker */
+    printf("\033[?25l\033[2J\033[H");
     fflush(stdout);
 }
 
