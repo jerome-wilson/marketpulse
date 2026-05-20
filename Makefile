@@ -40,7 +40,8 @@ SOURCES = $(SRC_DIR)/main.c \
           $(SRC_DIR)/config.c \
           $(SRC_DIR)/system.c \
           $(SRC_DIR)/history.c \
-          $(SRC_DIR)/stream.c
+          $(SRC_DIR)/stream.c \
+          $(SRC_DIR)/ai_insights.c
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
