@@ -91,6 +91,11 @@ int main(int argc, char *argv[]) {
             result = run_stream_mode(cmd.symbols, cmd.symbol_count);
             break;
 
+        case CMD_INSIGHT:
+            print_header();
+            result = fetch_and_display_insight(cmd.symbols[0]);
+            break;
+
         case CMD_DAEMON_START:
             printf("Starting MarketPulse daemon...\n");
             if (is_daemon_running()) {

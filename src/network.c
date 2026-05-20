@@ -328,13 +328,129 @@ static int make_api_request(const char *endpoint, const char *params,
     }
     
     response[response_size - 1] = '\0';
-    
+
     /* Clean up any trailing chunk markers */
     char *end = strstr(response, "\r\n");
     if (end && strlen(end) < 10) {
         *end = '\0';
     }
-    
+
+    return 0;
+}
+
+/*
+ * make_https_post — generic HTTPS POST for any host
+ *
+ * Sends a POST request with a JSON body using the same SSL infrastructure
+ * used by Finnhub requests. Used by ai_insights.c for the Gemini API.
+ *
+ * Parameters:
+ *   host         — hostname (e.g. "api.generativelanguage.googleapis.com")
+ *   path_query   — path + query string (e.g. "/v1beta/...?key=KEY")
+ *   json_body    — raw JSON body to POST
+ *   response     — output buffer for the response body
+ *   response_size— size of output buffer
+ *
+ * Returns: 0 on success, -1 on error
+ */
+int make_https_post(const char *host, const char *path_query,
+                    const char *json_body,
+                    char *response, size_t response_size) {
+    SSLConnection *conn;
+    char header[1024];
+    char buffer[MAX_BUFFER_SIZE];
+    int sockfd;
+    int bytes_received;
+    int total_received = 0;
+    size_t body_len    = strlen(json_body);
+
+    sockfd = create_connection(host, 443);
+    if (sockfd < 0) return -1;
+
+    conn = create_ssl_connection(sockfd, host);
+    if (!conn) { close(sockfd); return -1; }
+
+    /* Build HTTP POST headers */
+    snprintf(header, sizeof(header),
+             "POST %s HTTP/1.1\r\n"
+             "Host: %s\r\n"
+             "User-Agent: MarketPulse/1.0\r\n"
+             "Content-Type: application/json\r\n"
+             "Content-Length: %zu\r\n"
+             "Connection: close\r\n"
+             "\r\n",
+             path_query, host, body_len);
+
+    /* Send headers then body */
+    if (ssl_send(conn, header, strlen(header)) < 0 ||
+        ssl_send(conn, json_body, body_len)    < 0) {
+        close_ssl_connection(conn);
+        return -1;
+    }
+
+    /* Receive full response */
+    memset(buffer, 0, sizeof(buffer));
+    while ((bytes_received = ssl_recv(conn, buffer + total_received,
+                                      sizeof(buffer) - total_received - 1)) > 0) {
+        total_received += bytes_received;
+        if (total_received >= (int)sizeof(buffer) - 1) break;
+    }
+    buffer[total_received] = '\0';
+    close_ssl_connection(conn);
+
+    if (total_received <= 0) {
+        FILE *dbg = fopen("/tmp/marketpulse_ai.log", "w");
+        if (dbg) { fprintf(dbg, "SSL read returned 0 bytes\n"); fclose(dbg); }
+        return -1;
+    }
+
+    /* Reject non-200 responses (e.g. 404 model-not-found, 429 rate-limit) */
+    int http_status = 0;
+    {
+        const char *sp = strchr(buffer, ' ');
+        if (sp) http_status = atoi(sp + 1);
+    }
+    if (http_status != 200) {
+        FILE *dbg = fopen("/tmp/marketpulse_ai.log", "w");
+        if (dbg) {
+            fprintf(dbg, "HTTP status: %d\n%.512s\n", http_status, buffer);
+            fclose(dbg);
+        }
+        return -1;
+    }
+
+    /* Extract body (after \r\n\r\n) */
+    char *body = strstr(buffer, "\r\n\r\n");
+    if (!body) return -1;
+    body += 4;
+
+    /* Handle chunked transfer encoding — iterate all chunks */
+    if (strstr(buffer, "Transfer-Encoding: chunked")) {
+        char decoded[MAX_BUFFER_SIZE];
+        size_t decoded_len = 0;
+        char *p = body;
+        while (*p && decoded_len < sizeof(decoded) - 1) {
+            char *next;
+            long chunk_size = strtol(p, &next, 16);
+            if (chunk_size <= 0) break;             /* 0 = final chunk */
+            if (*next == '\r') next++;
+            if (*next == '\n') next++;
+            size_t to_copy = (size_t)chunk_size;
+            if (decoded_len + to_copy > sizeof(decoded) - 1)
+                to_copy = sizeof(decoded) - 1 - decoded_len;
+            memcpy(decoded + decoded_len, next, to_copy);
+            decoded_len += to_copy;
+            next += chunk_size;
+            if (*next == '\r') next++;
+            if (*next == '\n') next++;
+            p = next;
+        }
+        decoded[decoded_len] = '\0';
+        strncpy(response, decoded, response_size - 1);
+    } else {
+        strncpy(response, body, response_size - 1);
+    }
+    response[response_size - 1] = '\0';
     return 0;
 }
 

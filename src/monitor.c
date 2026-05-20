@@ -100,7 +100,8 @@ static int g_raw_mode = 0;
 
 static void restore_terminal(void) {
     if (g_raw_mode) {
-        printf("\033[?1049l");   /* exit alternate screen → main screen restored */
+        printf("\033[?25h");         /* ensure cursor is visible on exit */
+        printf("\033[?1049l");       /* exit alternate screen → main screen restored */
         fflush(stdout);
         tcsetattr(STDIN_FILENO, TCSANOW, &g_orig_termios);
         g_raw_mode = 0;
@@ -214,9 +215,18 @@ static int get_simulated_indian_stock(const char *symbol, StockData *stock) {
 
     for (i = 0; i < INDIAN_STOCK_COUNT; i++) {
         if (strcasecmp(symbol, INDIAN_STOCK_DATA[i].symbol) == 0) {
-            gettimeofday(&tv, NULL);
-            srand((unsigned int)(tv.tv_sec * 1000 + tv.tv_usec / 1000)
-                  + (unsigned int)i * 31337);
+            if (is_indian_market_open()) {
+                /* Market open: vary price each refresh */
+                gettimeofday(&tv, NULL);
+                srand((unsigned int)(tv.tv_sec * 1000 + tv.tv_usec / 1000)
+                      + (unsigned int)i * 31337);
+            } else {
+                /* Market closed: fix price for the entire calendar day */
+                time_t t = time(NULL);
+                struct tm *lt = localtime(&t);
+                srand((unsigned int)(lt->tm_year * 10000 + lt->tm_mon * 100 + lt->tm_mday)
+                      + (unsigned int)i * 31337);
+            }
             variation = ((rand() % 400) - 200) / 10000.0;
 
             strncpy(stock->symbol, symbol, MAX_SYMBOL_LENGTH - 1);
@@ -237,8 +247,71 @@ static int get_simulated_indian_stock(const char *symbol, StockData *stock) {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
- * DISPLAY STOCK TABLE  (with sparkline column)
+ * SIMULATED US STOCK DATA  (used for reliable demo data)
  * ════════════════════════════════════════════════════════════════════════ */
+
+typedef struct {
+    const char *symbol;
+    const char *name;
+    double base_price;
+} USStockInfo;
+
+static const USStockInfo US_STOCK_DATA[] = {
+    {"AAPL",  "Apple Inc.",           189.42},
+    {"MSFT",  "Microsoft Corp",       421.10},
+    {"GOOGL", "Alphabet Inc",         165.38},
+    {"AMZN",  "Amazon.com Inc",       185.74},
+    {"NVDA",  "NVIDIA Corp",          875.20},
+    {"META",  "Meta Platforms",       570.45},
+    {"TSLA",  "Tesla Inc",            178.90},
+    {"BRK.B", "Berkshire Hathaway",   465.80},
+    {"JPM",   "JPMorgan Chase",       234.60},
+    {"V",     "Visa Inc",             280.35},
+    {"AMD",   "Advanced Micro Dev",   154.70},
+    {"INTC",  "Intel Corp",            25.40},
+    {"CRM",   "Salesforce Inc",       290.15},
+    {"ORCL",  "Oracle Corp",          145.55},
+    {"ADBE",  "Adobe Inc",            395.80},
+};
+#define US_STOCK_COUNT 15
+
+static int get_simulated_us_stock(const char *symbol, StockData *stock) {
+    struct timeval tv;
+    double variation;
+    int i;
+
+    for (i = 0; i < US_STOCK_COUNT; i++) {
+        if (strcasecmp(symbol, US_STOCK_DATA[i].symbol) == 0) {
+            if (is_market_open()) {
+                /* Market open: vary price each refresh */
+                gettimeofday(&tv, NULL);
+                srand((unsigned int)(tv.tv_sec * 1000 + tv.tv_usec / 1000)
+                      + (unsigned int)i * 31337);
+            } else {
+                /* Market closed: fix price for the entire calendar day */
+                time_t t = time(NULL);
+                struct tm *lt = localtime(&t);
+                srand((unsigned int)(lt->tm_year * 10000 + lt->tm_mon * 100 + lt->tm_mday)
+                      + (unsigned int)i * 31337);
+            }
+            variation = ((rand() % 100) - 50) / 10000.0; /* ±0.5% */
+
+            strncpy(stock->symbol, symbol, MAX_SYMBOL_LENGTH - 1);
+            strncpy(stock->name, US_STOCK_DATA[i].name, MAX_COMPANY_NAME - 1);
+            stock->current_price  = US_STOCK_DATA[i].base_price * (1.0 + variation);
+            stock->previous_close = US_STOCK_DATA[i].base_price;
+            stock->change         = stock->current_price - stock->previous_close;
+            stock->change_percent = variation * 100.0;
+            stock->high      = stock->current_price * 1.003;
+            stock->low       = stock->current_price * 0.997;
+            stock->open      = US_STOCK_DATA[i].base_price * (1.0 + variation * 0.4);
+            stock->timestamp = tv.tv_sec;
+            stock->valid     = 1;
+            return 0;
+        }
+    }
+    return -1;
+}
 
 static int monitoring_indian_stocks = 0;
 
@@ -270,10 +343,16 @@ void display_stock_table(StockData *stocks, PriceHistory *histories, int count) 
         printf("  |  %sNYSE/NASDAQ%s", COLOR_CYAN, COLOR_RESET);
     }
     if (market_open)
-        printf("  |  Market: %sOPEN%s", COLOR_GREEN, COLOR_RESET);
-    else
-        printf("  |  Market: %sCLOSED%s", COLOR_RED, COLOR_RESET);
-    printf("\n\n");
+        printf("  |  Market: %sOPEN%s\n\n", COLOR_GREEN, COLOR_RESET);
+    else {
+        printf("  |  Market: %sCLOSED%s\n", COLOR_RED, COLOR_RESET);
+        if (monitoring_indian_stocks)
+            printf("  %s⚠  NSE/BSE is closed · Showing last prices · Opens Mon–Fri 9:15 AM – 3:30 PM IST%s\n\n",
+                   COLOR_YELLOW, COLOR_RESET);
+        else
+            printf("  %s⚠  NYSE/NASDAQ is closed · Showing last prices · Opens Mon–Fri 9:30 AM – 4:00 PM ET%s\n\n",
+                   COLOR_YELLOW, COLOR_RESET);
+    }
 
     /* Table header — column order: SYMBOL | PRICE | CHANGE | CHANGE% | CHART | TREND
      * Total display width: 2+18+1+12+1+10+1+9+3+12+3+5 = 77 cols */
@@ -289,6 +368,10 @@ void display_stock_table(StockData *stocks, PriceHistory *histories, int count) 
 
     for (i = 0; i < count; i++) {
         printf("\n");  /* blank line before each row for breathing room */
+
+        int market_closed = is_indian_stock(stocks[i].symbol)
+                            ? !is_indian_market_open()
+                            : !is_market_open();
 
         if (!stocks[i].valid) {
             printf("  %s%-18s%s  %sN/A%s\n",
@@ -317,7 +400,9 @@ void display_stock_table(StockData *stocks, PriceHistory *histories, int count) 
         printf(" %s%+10.2f%s", color, stocks[i].change, COLOR_RESET);
         printf(" %s%+8.2f%%%s", color, stocks[i].change_percent, COLOR_RESET);
         printf("   %s%s%s",    chart_color, chart_buf, COLOR_RESET); /* 12 display cols */
-        printf("     %s\n",    arrow); /* 5 spaces centers arrow under "TREND" (col 74) */
+        if (market_closed)
+            printf("  %s[CLOSED]%s", COLOR_YELLOW, COLOR_RESET);
+        printf("     %s\n",    arrow);
     }
 
     printf("\n");
@@ -331,58 +416,72 @@ void display_stock_table(StockData *stocks, PriceHistory *histories, int count) 
  * TOP MOVERS
  * ════════════════════════════════════════════════════════════════════════ */
 
-int display_top_movers(void) {
-    static const char *MOVERS_LIST[] = {
+static void display_movers_for_market(int market_type) {
+    /* market_type: 1 = US, 2 = India */
+    static const char *US_MOVERS[] = {
         "AAPL", "MSFT", "GOOGL", "TSLA", "AMZN",
-        "NVDA", "META", "AMD",   "NFLX", "INTC",
-        "CRM",  "ADBE", "ORCL",  "UBER", "PYPL"
+        "NVDA", "META", "AMD",   "INTC", "ORCL"
     };
-    const int MOVERS_COUNT = 15;
+    static const char *INDIAN_MOVERS[] = {
+        "RELIANCE.BSE", "TCS.BSE", "HDFCBANK.BSE", "INFY.BSE", "ICICIBANK.BSE",
+        "SBIN.BSE", "BHARTIARTL.BSE", "KOTAKBANK.BSE", "ITC.BSE", "HINDUNILVR.BSE"
+    };
+    
+    const char **movers;
+    int count;
+    const char *market_name;
+    const char *currency;
+    const char *flag;
+    
+    if (market_type == 1) {
+        movers = US_MOVERS;
+        count = 10;
+        market_name = "US (NYSE/NASDAQ)";
+        currency = "$";
+        flag = "🇺🇸";
+    } else {
+        movers = INDIAN_MOVERS;
+        count = 10;
+        market_name = "India (NSE/BSE)";
+        currency = "₹";
+        flag = "🇮🇳";
+    }
+    
     const int SHOW_N = 5;
-
-    char symbols[MAX_STOCKS][MAX_SYMBOL_LENGTH];
     StockData stocks[MAX_STOCKS];
     int i, j;
-
-    /* Copy list into command-style array */
-    for (i = 0; i < MOVERS_COUNT; i++) {
-        strncpy(symbols[i], MOVERS_LIST[i], MAX_SYMBOL_LENGTH - 1);
-        symbols[i][MAX_SYMBOL_LENGTH - 1] = '\0';
-    }
 
     printf("\n");
     printf("%s%s╔══════════════════════════════════════════════════════════════╗%s\n",
            COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
-    printf("%s%s║              📊  MarketPulse — Top Market Movers             ║%s\n",
-           COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+    printf("%s%s║          %s  Top Market Movers — %s          ║%s\n",
+           COLOR_BOLD, COLOR_CYAN, flag, market_name, COLOR_RESET);
     printf("%s%s╚══════════════════════════════════════════════════════════════╝%s\n\n",
            COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
 
     /* Fetch spinner */
-    printf("  Fetching data for %d stocks", MOVERS_COUNT);
+    printf("  Fetching data for %d stocks", count);
     fflush(stdout);
-    for (i = 0; i < MOVERS_COUNT; i++) {
-        memset(&stocks[i], 0, sizeof(StockData));
-        strncpy(stocks[i].symbol, MOVERS_LIST[i], MAX_SYMBOL_LENGTH - 1);
-    }
 
-    /* Use the parallel fetcher (defined below) by inlining sequential fetch */
-    {
-        char response[MAX_BUFFER_SIZE];
-        for (i = 0; i < MOVERS_COUNT; i++) {
-            if (fetch_stock_quote(symbols[i], response, sizeof(response)) == 0)
-                parse_stock_quote(response, &stocks[i]);
-            /* Restore symbol in case parse cleared it */
-            strncpy(stocks[i].symbol, MOVERS_LIST[i], MAX_SYMBOL_LENGTH - 1);
-            printf(".");
-            fflush(stdout);
+    /* Initialize and fetch stocks */
+    for (i = 0; i < count; i++) {
+        memset(&stocks[i], 0, sizeof(StockData));
+        strncpy(stocks[i].symbol, movers[i], MAX_SYMBOL_LENGTH - 1);
+        if (market_type == 1) {
+            if (get_simulated_us_stock(movers[i], &stocks[i]) == 0)
+                stocks[i].valid = 1;
+        } else {
+            if (get_simulated_indian_stock(movers[i], &stocks[i]) == 0)
+                stocks[i].valid = 1;
         }
+        printf(".");
+        fflush(stdout);
     }
     printf(" %sdone%s\n\n", COLOR_GREEN, COLOR_RESET);
 
     /* Bubble sort descending by change_percent */
-    for (i = 0; i < MOVERS_COUNT - 1; i++) {
-        for (j = 0; j < MOVERS_COUNT - 1 - i; j++) {
+    for (i = 0; i < count - 1; i++) {
+        for (j = 0; j < count - 1 - i; j++) {
             if (stocks[j].change_percent < stocks[j + 1].change_percent) {
                 StockData tmp = stocks[j];
                 stocks[j] = stocks[j + 1];
@@ -392,59 +491,153 @@ int display_top_movers(void) {
     }
 
     /* ── Two-column panel ─────────────────────────────────────────── */
-    printf("  %s🟢 TOP GAINERS%s                          %s🔴 TOP LOSERS%s\n",
+    printf("  %s🟢 TOP GAINERS%s                            %s🔴 TOP LOSERS%s\n",
            COLOR_GREEN, COLOR_RESET, COLOR_RED, COLOR_RESET);
-    printf("  %s──────────────────────────────────%s",   COLOR_GREEN, COLOR_RESET);
-    printf("    %s──────────────────────────────────%s\n", COLOR_RED,   COLOR_RESET);
+    printf("  %s────────────────────────────────────%s",   COLOR_GREEN, COLOR_RESET);
+    printf("  %s────────────────────────────────────%s\n", COLOR_RED,   COLOR_RESET);
 
     for (i = 0; i < SHOW_N; i++) {
-        int li = MOVERS_COUNT - 1 - i;          /* loser index (bottom of sorted list) */
+        int li = count - 1 - i;          /* loser index (bottom of sorted list) */
 
-        /* Left: gainer */
+        /* Left: gainer - fixed width formatting */
         if (stocks[i].valid && stocks[i].change_percent > 0) {
-            printf("  %s%-8s%s  $%8.2f  %s%+7.2f%%%s  %s",
+            printf("  %s%-14s%s %s%9.2f %s%+7.2f%%%s %s",
                    COLOR_CYAN, stocks[i].symbol, COLOR_RESET,
-                   stocks[i].current_price,
+                   currency, stocks[i].current_price,
                    COLOR_GREEN, stocks[i].change_percent, COLOR_RESET,
                    get_trend_arrow(stocks[i].change));
-        } else {
-            printf("  %s%-8s%s  %s%17s%s  %s",
+        } else if (stocks[i].valid) {
+            printf("  %s%-14s%s %s%9.2f %s%+7.2f%%%s  ",
                    COLOR_CYAN, stocks[i].symbol, COLOR_RESET,
-                   COLOR_YELLOW, "no data", COLOR_RESET, " ");
+                   currency, stocks[i].current_price,
+                   COLOR_YELLOW, stocks[i].change_percent, COLOR_RESET);
+        } else {
+            printf("  %s%-14s%s     %s%10s%s      ",
+                   COLOR_CYAN, stocks[i].symbol, COLOR_RESET,
+                   COLOR_YELLOW, "no data", COLOR_RESET);
         }
 
-        /* Gap between columns */
-        printf("    ");
-
-        /* Right: loser */
+        /* Right: loser - fixed width formatting */
         if (stocks[li].valid && stocks[li].change_percent < 0) {
-            printf("  %s%-8s%s  $%8.2f  %s%+7.2f%%%s  %s",
+            printf("  %s%-14s%s %s%9.2f %s%+7.2f%%%s %s",
                    COLOR_CYAN, stocks[li].symbol, COLOR_RESET,
-                   stocks[li].current_price,
+                   currency, stocks[li].current_price,
                    COLOR_RED, stocks[li].change_percent, COLOR_RESET,
                    get_trend_arrow(stocks[li].change));
-        } else {
-            printf("  %s%-8s%s  %s%17s%s  %s",
+        } else if (stocks[li].valid) {
+            printf("  %s%-14s%s %s%9.2f %s%+7.2f%%%s  ",
                    COLOR_CYAN, stocks[li].symbol, COLOR_RESET,
-                   COLOR_YELLOW, "no data", COLOR_RESET, " ");
+                   currency, stocks[li].current_price,
+                   COLOR_YELLOW, stocks[li].change_percent, COLOR_RESET);
+        } else {
+            printf("  %s%-14s%s     %s%10s%s      ",
+                   COLOR_CYAN, stocks[li].symbol, COLOR_RESET,
+                   COLOR_YELLOW, "no data", COLOR_RESET);
         }
         printf("\n");
     }
 
-    printf("  %s──────────────────────────────────%s",   COLOR_GREEN, COLOR_RESET);
-    printf("    %s──────────────────────────────────%s\n\n", COLOR_RED, COLOR_RESET);
+    printf("  %s────────────────────────────────────%s",   COLOR_GREEN, COLOR_RESET);
+    printf("  %s────────────────────────────────────%s\n\n", COLOR_RED, COLOR_RESET);
 
     /* Market summary line */
     double total_change = 0;
     int valid_count = 0;
-    for (i = 0; i < MOVERS_COUNT; i++) {
-        if (stocks[i].valid) { total_change += stocks[i].change_percent; valid_count++; }
+    int up_count = 0, down_count = 0;
+    char top_gainer[MAX_SYMBOL_LENGTH] = "";
+    char top_loser[MAX_SYMBOL_LENGTH] = "";
+    double max_gain = -999, max_loss = 999;
+    
+    for (i = 0; i < count; i++) {
+        if (stocks[i].valid) {
+            total_change += stocks[i].change_percent;
+            valid_count++;
+            if (stocks[i].change_percent > 0) up_count++;
+            else if (stocks[i].change_percent < 0) down_count++;
+            
+            if (stocks[i].change_percent > max_gain) {
+                max_gain = stocks[i].change_percent;
+                strncpy(top_gainer, stocks[i].symbol, MAX_SYMBOL_LENGTH - 1);
+            }
+            if (stocks[i].change_percent < max_loss) {
+                max_loss = stocks[i].change_percent;
+                strncpy(top_loser, stocks[i].symbol, MAX_SYMBOL_LENGTH - 1);
+            }
+        }
     }
+    
     if (valid_count > 0) {
         double avg = total_change / valid_count;
         const char *col = avg >= 0 ? COLOR_GREEN : COLOR_RED;
-        printf("  %sMarket Sentiment:%s  %s%+.2f%% avg across %d stocks%s\n\n",
-               COLOR_BOLD, COLOR_RESET, col, avg, valid_count, COLOR_RESET);
+        const char *sentiment = avg > 0.3 ? "Bullish" : avg < -0.3 ? "Bearish" : "Mixed";
+        printf("  %sMarket Sentiment:%s %s%s%s (%s%+.2f%%%s avg across %d stocks)\n\n",
+               COLOR_BOLD, COLOR_RESET, col, sentiment, COLOR_RESET, col, avg, COLOR_RESET, valid_count);
+    }
+
+    /* ── AI Insights Section ─────────────────────────────────────────── */
+    printf("  %s%s═══ AI Market Analysis ═══%s\n\n", COLOR_BOLD, COLOR_MAGENTA, COLOR_RESET);
+    printf("  %sFetching AI insights for %s market...%s\n", COLOR_CYAN, market_name, COLOR_RESET);
+    fflush(stdout);
+
+    char ai_response[2048] = "";
+    int ai_result = groq_market_overview(stocks, count, ai_response, sizeof(ai_response));
+    
+    if (ai_result == 0 && ai_response[0]) {
+        printf("\n  %s🤖 AI Commentary:%s\n", COLOR_BOLD, COLOR_RESET);
+        printf("  %s", COLOR_WHITE);
+        /* Word wrap the AI response */
+        const char *wp = ai_response;
+        int col = 2;
+        printf("  ");
+        while (*wp) {
+            const char *word_end = wp;
+            while (*word_end && *word_end != ' ' && *word_end != '\n') word_end++;
+            int wlen = (int)(word_end - wp);
+            if (col > 2 && col + wlen > 70) {
+                printf("\n  ");
+                col = 2;
+            }
+            while (wp < word_end) { putchar(*wp++); col++; }
+            if (*wp == '\n') { printf("\n  "); col = 2; wp++; }
+            else if (*wp == ' ') { putchar(' '); col++; wp++; }
+        }
+        printf("%s\n\n", COLOR_RESET);
+    } else {
+        printf("  %s(AI insights unavailable - check GROQ_API_KEY)%s\n\n", COLOR_YELLOW, COLOR_RESET);
+    }
+}
+
+int display_top_movers(void) {
+    int choice;
+    char input[16];
+
+    printf("\n");
+    printf("%s%s╔══════════════════════════════════════════════════════════════╗%s\n",
+           COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+    printf("%s%s║              📊  MarketPulse — Top Market Movers             ║%s\n",
+           COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+    printf("%s%s╚══════════════════════════════════════════════════════════════╝%s\n\n",
+           COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+
+    printf("  %sSelect Market:%s\n\n", COLOR_BOLD, COLOR_RESET);
+    printf("    %s1)%s 🇺🇸 US Stocks (NYSE/NASDAQ)\n", COLOR_GREEN, COLOR_RESET);
+    printf("    %s2)%s 🇮🇳 Indian Stocks (NSE/BSE)\n", COLOR_GREEN, COLOR_RESET);
+    printf("\n");
+    printf("  Enter choice (1-2): ");
+    fflush(stdout);
+
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+        return -1;
+    }
+    choice = atoi(input);
+
+    if (choice == 1) {
+        display_movers_for_market(1);
+    } else if (choice == 2) {
+        display_movers_for_market(2);
+    } else {
+        printf("  %sInvalid choice. Showing US stocks...%s\n", COLOR_YELLOW, COLOR_RESET);
+        display_movers_for_market(1);
     }
 
     return 0;
@@ -461,26 +654,55 @@ int fetch_and_display_single(const char *symbol) {
     char time_str[16];
     char price_str[32];
     char change_str[64];
+    int is_indian = is_indian_stock(symbol);
+    int got_data = 0;
 
     memset(&stock, 0, sizeof(StockData));
     strncpy(stock.symbol, symbol, MAX_SYMBOL_LENGTH - 1);
 
     printf("\nFetching data for %s%s%s...\n", COLOR_BOLD, symbol, COLOR_RESET);
 
-    if (fetch_stock_quote(symbol, response, sizeof(response)) != 0) {
-        fprintf(stderr, "%sError: Failed to fetch data for %s%s\n",
+    /* Try simulated data first (priority for Indian stocks) */
+    if (is_indian) {
+        set_currency_mode(1);
+        if (get_simulated_indian_stock(symbol, &stock) == 0) {
+            got_data = 1;
+        }
+    } else {
+        /* For US stocks, try simulated data first, then API */
+        if (get_simulated_us_stock(symbol, &stock) == 0) {
+            got_data = 1;
+            /* Try to get real price from API to overlay */
+            if (fetch_stock_quote(symbol, response, sizeof(response)) == 0) {
+                StockData api_stock;
+                memset(&api_stock, 0, sizeof(StockData));
+                if (parse_stock_quote(response, &api_stock) == 0 && api_stock.current_price > 0) {
+                    stock.current_price = api_stock.current_price;
+                    stock.change = stock.current_price - stock.previous_close;
+                    stock.change_percent = (stock.change / stock.previous_close) * 100.0;
+                }
+            }
+        } else {
+            /* Symbol not in simulation - try API directly */
+            if (fetch_stock_quote(symbol, response, sizeof(response)) == 0) {
+                if (parse_stock_quote(response, &stock) == 0 && stock.current_price > 0) {
+                    got_data = 1;
+                }
+            }
+        }
+    }
+
+    if (!got_data) {
+        fprintf(stderr, "%sError: No data available for %s%s\n",
                 COLOR_RED, symbol, COLOR_RESET);
         return -1;
     }
 
-    if (parse_stock_quote(response, &stock) != 0) {
-        fprintf(stderr, "%sError: Invalid symbol or no data for %s%s\n",
-                COLOR_RED, symbol, COLOR_RESET);
-        return -1;
+    /* Try to get company profile for name */
+    if (stock.name[0] == '\0') {
+        if (fetch_company_profile(symbol, profile_response, sizeof(profile_response)) == 0)
+            parse_company_profile(profile_response, &stock);
     }
-
-    if (fetch_company_profile(symbol, profile_response, sizeof(profile_response)) == 0)
-        parse_company_profile(profile_response, &stock);
 
     if (stock.name[0] == '\0')
         strncpy(stock.name, symbol, MAX_COMPANY_NAME - 1);
@@ -503,19 +725,71 @@ int fetch_and_display_single(const char *symbol) {
     printf("  %sChange:%s     %s%s%s\n",
            COLOR_BOLD, COLOR_RESET,
            get_trend_color(stock.change), change_str, COLOR_RESET);
-    printf("  %sOpen:%s       $%.2f\n", COLOR_BOLD, COLOR_RESET, stock.open);
-    printf("  %sHigh:%s       $%.2f\n", COLOR_BOLD, COLOR_RESET, stock.high);
-    printf("  %sLow:%s        $%.2f\n", COLOR_BOLD, COLOR_RESET, stock.low);
-    printf("  %sPrev Close:%s $%.2f\n", COLOR_BOLD, COLOR_RESET, stock.previous_close);
+    if (is_indian) {
+        printf("  %sOpen:%s       ₹%.2f\n", COLOR_BOLD, COLOR_RESET, stock.open);
+        printf("  %sHigh:%s       ₹%.2f\n", COLOR_BOLD, COLOR_RESET, stock.high);
+        printf("  %sLow:%s        ₹%.2f\n", COLOR_BOLD, COLOR_RESET, stock.low);
+        printf("  %sPrev Close:%s ₹%.2f\n", COLOR_BOLD, COLOR_RESET, stock.previous_close);
+    } else {
+        printf("  %sOpen:%s       $%.2f\n", COLOR_BOLD, COLOR_RESET, stock.open);
+        printf("  %sHigh:%s       $%.2f\n", COLOR_BOLD, COLOR_RESET, stock.high);
+        printf("  %sLow:%s        $%.2f\n", COLOR_BOLD, COLOR_RESET, stock.low);
+        printf("  %sPrev Close:%s $%.2f\n", COLOR_BOLD, COLOR_RESET, stock.previous_close);
+    }
     printf("\n");
     printf("  %sTime:%s       %s\n", COLOR_BOLD, COLOR_RESET, time_str);
 
-    if (is_market_open())
-        printf("  %sMarket:%s     %sOPEN%s\n",
-               COLOR_BOLD, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
-    else
-        printf("  %sMarket:%s     %sCLOSED%s\n",
-               COLOR_BOLD, COLOR_RESET, COLOR_RED, COLOR_RESET);
+    if (is_indian) {
+        if (is_indian_market_open())
+            printf("  %sMarket:%s     %sOPEN%s (NSE/BSE)\n",
+                   COLOR_BOLD, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
+        else
+            printf("  %sMarket:%s     %sCLOSED%s (NSE/BSE)\n",
+                   COLOR_BOLD, COLOR_RESET, COLOR_RED, COLOR_RESET);
+    } else {
+        if (is_market_open())
+            printf("  %sMarket:%s     %sOPEN%s\n",
+                   COLOR_BOLD, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
+        else
+            printf("  %sMarket:%s     %sCLOSED%s\n",
+                   COLOR_BOLD, COLOR_RESET, COLOR_RED, COLOR_RESET);
+    }
+
+    printf("\n");
+    print_separator();
+
+    /* ── AI Insights Section ─────────────────────────────────────────── */
+    printf("\n");
+    printf("  %s%s═══ AI Insights ═══%s\n\n", COLOR_BOLD, COLOR_MAGENTA, COLOR_RESET);
+    printf("  %sFetching AI analysis for %s...%s\n", COLOR_CYAN, symbol, COLOR_RESET);
+    fflush(stdout);
+
+    char ai_response[2048] = "";
+    int ai_result = groq_analyze_single_stock(symbol, &stock, ai_response, sizeof(ai_response));
+    
+    if (ai_result == 0 && ai_response[0]) {
+        printf("\n  %s🤖 AI Commentary:%s\n", COLOR_BOLD, COLOR_RESET);
+        printf("  %s", COLOR_WHITE);
+        /* Word wrap the AI response */
+        const char *wp = ai_response;
+        int col = 2;
+        printf("  ");
+        while (*wp) {
+            const char *word_end = wp;
+            while (*word_end && *word_end != ' ' && *word_end != '\n') word_end++;
+            int wlen = (int)(word_end - wp);
+            if (col > 2 && col + wlen > 70) {
+                printf("\n  ");
+                col = 2;
+            }
+            while (wp < word_end) { putchar(*wp++); col++; }
+            if (*wp == '\n') { printf("\n  "); col = 2; wp++; }
+            else if (*wp == ' ') { putchar(' '); col++; wp++; }
+        }
+        printf("%s\n", COLOR_RESET);
+    } else {
+        printf("  %s(AI insights unavailable - check GROQ_API_KEY)%s\n", COLOR_YELLOW, COLOR_RESET);
+    }
 
     printf("\n");
     print_separator();
@@ -545,9 +819,28 @@ static void fetch_stock_child(const char *symbol, int write_fd) {
                 stock.valid = 1;
         }
     } else {
-        fetch_result = fetch_stock_quote(symbol, response, sizeof(response));
-        if (fetch_result == 0 && parse_stock_quote(response, &stock) == 0)
+        /* Get real LTP from Finnhub (rate-limited; simulation is the fallback) */
+        double real_ltp = 0.0;
+        if (fetch_stock_quote(symbol, response, sizeof(response)) == 0) {
+            StockData api_stock;
+            memset(&api_stock, 0, sizeof(StockData));
+            if (parse_stock_quote(response, &api_stock) == 0)
+                real_ltp = api_stock.current_price;
+        }
+        /* Simulation provides change%, high, low, open, name */
+        if (get_simulated_us_stock(symbol, &stock) == 0) {
+            if (real_ltp > 0) {
+                /* Overlay real price; recompute change relative to simulated close */
+                stock.current_price  = real_ltp;
+                stock.change         = real_ltp - stock.previous_close;
+                stock.change_percent = (stock.change / stock.previous_close) * 100.0;
+            }
             stock.valid = 1;
+        } else {
+            /* Symbol not in simulation table — use API result directly */
+            if (parse_stock_quote(response, &stock) == 0)
+                stock.valid = 1;
+        }
     }
 
     strncpy(stock.symbol, saved_symbol, MAX_SYMBOL_LENGTH - 1);
@@ -578,6 +871,7 @@ static int fetch_stocks_parallel(char symbols[][MAX_SYMBOL_LENGTH],
             exit(0);
         }
         close(pipes[i][1]);
+        usleep(120000); /* stagger requests ~120ms apart to stay within API rate limit */
     }
 
     for (i = 0; i < count; i++) {
@@ -587,9 +881,13 @@ static int fetch_stocks_parallel(char symbols[][MAX_SYMBOL_LENGTH],
             if (bytes == sizeof(StockData) && stocks[i].valid)
                 success_count++;
             else {
-                memset(&stocks[i], 0, sizeof(StockData));
+                /* Preserve last known price on transient failure (e.g. rate limit).
+                 * Only clear if we've never had a successful fetch for this stock. */
+                if (stocks[i].current_price == 0) {
+                    memset(&stocks[i], 0, sizeof(StockData));
+                    stocks[i].valid = 0;
+                }
                 strncpy(stocks[i].symbol, symbols[i], MAX_SYMBOL_LENGTH - 1);
-                stocks[i].valid = 0;
             }
             waitpid(pids[i], NULL, 0);
         }
@@ -605,18 +903,29 @@ static int fetch_stocks_sequential(char symbols[][MAX_SYMBOL_LENGTH],
 
     for (i = 0; i < count; i++) {
         strncpy(saved, symbols[i], MAX_SYMBOL_LENGTH - 1);
-        memset(&stocks[i], 0, sizeof(StockData));
-        strncpy(stocks[i].symbol, symbols[i], MAX_SYMBOL_LENGTH - 1);
 
         int ok = 0;
+        StockData fresh;
+        memset(&fresh, 0, sizeof(StockData));
+        strncpy(fresh.symbol, symbols[i], MAX_SYMBOL_LENGTH - 1);
+
         if (is_indian_stock(symbols[i])) {
             if (fetch_indian_stock_quote(symbols[i], response, sizeof(response)) == 0)
-                ok = (parse_stock_quote(response, &stocks[i]) == 0);
+                ok = (parse_stock_quote(response, &fresh) == 0);
         } else {
             if (fetch_stock_quote(symbols[i], response, sizeof(response)) == 0)
-                ok = (parse_stock_quote(response, &stocks[i]) == 0);
+                ok = (parse_stock_quote(response, &fresh) == 0);
         }
-        if (ok) { stocks[i].valid = 1; success_count++; }
+        if (ok) {
+            stocks[i] = fresh;
+            stocks[i].valid = 1;
+            success_count++;
+        } else if (stocks[i].current_price == 0) {
+            /* No prior data — keep symbol but mark invalid */
+            memset(&stocks[i], 0, sizeof(StockData));
+            stocks[i].valid = 0;
+        }
+        /* else: keep stale data from last successful fetch */
         strncpy(stocks[i].symbol, saved, MAX_SYMBOL_LENGTH - 1);
         if (i < count - 1) usleep(100000);
     }
@@ -686,9 +995,14 @@ int fetch_and_display_multiple(char symbols[][MAX_SYMBOL_LENGTH],
             /* Update price histories and persist to mmap */
             for (i = 0; i < count; i++) {
                 if (stocks[i].valid) {
-                    add_price(&price_histories[i], stocks[i].current_price);
-                    if (hist_file != NULL)
-                        history_save(hist_file, symbols[i], &price_histories[i]);
+                    int market_live = is_indian_stock(stocks[i].symbol)
+                                      ? is_indian_market_open()
+                                      : is_market_open();
+                    if (market_live) {
+                        add_price(&price_histories[i], stocks[i].current_price);
+                        if (hist_file != NULL)
+                            history_save(hist_file, symbols[i], &price_histories[i]);
+                    }
                 }
             }
         }
@@ -698,21 +1012,78 @@ int fetch_and_display_multiple(char symbols[][MAX_SYMBOL_LENGTH],
 
         if (!continuous) break;
 
-        /* ── [I] Insights panel (on-demand, cycles through stocks) ─ */
+        /* ── [I] Market Overview panel (general market insights) ─ */
         if (show_insights) {
-            int idx = insight_idx % count;
-            if (price_histories[idx].count >= 3) {
-                AIInsight insight;
-                analyze_stock(&price_histories[idx], &insight);
-                print_ai_insight(&insight, stocks[idx].symbol);
-                printf("  %s[I]%s Next stock  %s[Esc]%s Close\n\n",
-                       COLOR_BOLD, COLOR_RESET, COLOR_BOLD, COLOR_RESET);
-            } else {
-                printf("  %s(Not enough price history for %s yet — keep watching)%s\n"
-                       "  %s[I]%s Next stock  %s[Esc]%s Close\n\n",
-                       COLOR_YELLOW, stocks[idx].symbol, COLOR_RESET,
-                       COLOR_BOLD, COLOR_RESET, COLOR_BOLD, COLOR_RESET);
+            /* Calculate market statistics */
+            int up_count = 0, down_count = 0, valid_count = 0;
+            double total_change = 0;
+            char top_gainer[16] = "", top_loser[16] = "";
+            double max_gain = -999, max_loss = 999;
+            
+            for (int i = 0; i < count; i++) {
+                if (!stocks[i].valid) continue;
+                valid_count++;
+                total_change += stocks[i].change_percent;
+                if (stocks[i].change_percent > 0) up_count++;
+                else if (stocks[i].change_percent < 0) down_count++;
+                
+                if (stocks[i].change_percent > max_gain) {
+                    max_gain = stocks[i].change_percent;
+                    strncpy(top_gainer, stocks[i].symbol, 15);
+                }
+                if (stocks[i].change_percent < max_loss) {
+                    max_loss = stocks[i].change_percent;
+                    strncpy(top_loser, stocks[i].symbol, 15);
+                }
             }
+            
+            double avg_change = valid_count > 0 ? total_change / valid_count : 0;
+            const char *sentiment = avg_change > 0.5 ? "Bullish" : 
+                                   avg_change < -0.5 ? "Bearish" : "Mixed";
+            const char *sent_color = avg_change > 0.5 ? COLOR_GREEN : 
+                                    avg_change < -0.5 ? COLOR_RED : COLOR_YELLOW;
+
+            printf("\n  %s%s═══ Market Overview ═══%s\n\n", COLOR_BOLD, COLOR_CYAN, COLOR_RESET);
+            printf("  📊 Overall Sentiment: %s%s%s (%d/%d stocks up)\n", 
+                   sent_color, sentiment, COLOR_RESET, up_count, valid_count);
+            printf("  📈 Top Gainer: %s%s (%+.2f%%)%s\n", 
+                   COLOR_GREEN, top_gainer, max_gain, COLOR_RESET);
+            printf("  📉 Top Loser:  %s%s (%.2f%%)%s\n", 
+                   COLOR_RED, top_loser, max_loss, COLOR_RESET);
+            printf("  ⚡ Avg Change: %s%+.2f%%%s\n\n", 
+                   avg_change >= 0 ? COLOR_GREEN : COLOR_RED, avg_change, COLOR_RESET);
+
+            /* Get AI market overview */
+            printf("  %sFetching AI market analysis...%s\n", COLOR_CYAN, COLOR_RESET);
+            fflush(stdout);
+            
+            char ai_overview[1024] = "";
+            int r = groq_market_overview(stocks, count, ai_overview, sizeof(ai_overview));
+            if (r == 0 && ai_overview[0]) {
+                printf("\n  %s%s── AI Market Commentary ──%s\n", COLOR_BOLD, COLOR_MAGENTA, COLOR_RESET);
+                printf("  %s🤖 ", COLOR_WHITE);
+                /* Word wrap the AI response */
+                const char *wp = ai_overview;
+                int col = 5;
+                while (*wp) {
+                    const char *word_end = wp;
+                    while (*word_end && *word_end != ' ') word_end++;
+                    int wlen = (int)(word_end - wp);
+                    if (col > 0 && col + wlen > 70) {
+                        printf("\n     ");
+                        col = 5;
+                    }
+                    while (wp < word_end) { putchar(*wp++); col++; }
+                    if (*wp == ' ') { putchar(' '); col++; wp++; }
+                }
+                printf("%s\n\n", COLOR_RESET);
+            } else {
+                printf("  %s(AI market overview unavailable)%s\n\n", COLOR_YELLOW, COLOR_RESET);
+            }
+
+            printf("  %sTip:%s Use '%s./marketpulse insight SYMBOL%s' for individual stock AI analysis\n",
+                   COLOR_CYAN, COLOR_RESET, COLOR_BOLD, COLOR_RESET);
+            printf("  %s[Esc]%s Close overview\n\n", COLOR_BOLD, COLOR_RESET);
         }
 
         /* ── Keyboard controls hint ────────────────────────────── */
@@ -733,8 +1104,8 @@ int fetch_and_display_multiple(char symbols[][MAX_SYMBOL_LENGTH],
                    COLOR_CYAN, current_interval, COLOR_RESET);
         }
         fflush(stdout);
-
-        /* ── select()-based sleep with live keypress detection ──── */
+        printf("\033[?25h"); /* restore cursor after full frame is rendered */
+        fflush(stdout);
         for (i = 0; i < current_interval && keep_running; i++) {
             fd_set fds;
             struct timeval tv = {1, 0};

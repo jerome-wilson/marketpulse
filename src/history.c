@@ -27,10 +27,16 @@ PriceHistoryFile *history_open(const char *path) {
     int is_new = 0;
 
     /* Ensure the data/ directory exists */
-    mkdir("data", 0755);
+    if (mkdir("data", 0755) == -1 && errno != EEXIST) {
+        fprintf(stderr, "Warning: Could not create data directory: %s\n", strerror(errno));
+        /* Continue anyway - directory might already exist */
+    }
 
     int fd = open(path, O_RDWR | O_CREAT, 0644);
-    if (fd == -1) return NULL;
+    if (fd == -1) {
+        fprintf(stderr, "Error: Could not open history file '%s': %s\n", path, strerror(errno));
+        return NULL;
+    }
 
     /* If the file is smaller than our layout, pre-allocate */
     if (fstat(fd, &st) == 0 && st.st_size < (off_t)size) {
