@@ -78,6 +78,8 @@ typedef struct {
     double moving_avg_5;
     double moving_avg_10;
     double volatility;
+    double rsi;               /* 14-period RSI, 0–100; 50 = insufficient data */
+    int    ma_crossover;      /* +1 golden cross, -1 death cross, 0 neutral */
     char recommendation[128];
 } AIInsight;
 
@@ -96,7 +98,8 @@ typedef enum {
     CMD_DAEMON_STOP,        /* Stop daemon */
     CMD_DAEMON_STATUS,      /* Daemon status */
     CMD_TOP,                /* Top market movers */
-    CMD_STREAM              /* Live FIFO stream (mkfifo) */
+    CMD_STREAM,             /* Live FIFO stream (mkfifo) */
+    CMD_INSIGHT             /* AI insight for single stock */
 } CommandType;
 
 /* Failure simulation types */
@@ -162,6 +165,16 @@ static const char *NIFTY50_TOP10[] = {
 #define ALPHAVANTAGE_HOST "www.alphavantage.co"
 #define ALPHAVANTAGE_PORT 443
 
+/* Gemini AI API (free tier) — export GEMINI_API_KEY=<your-key> */
+#define GEMINI_HOST  "api.generativelanguage.googleapis.com"
+#define GEMINI_PORT  443
+#define GEMINI_MODEL "gemini-2.0-flash"
+
+/* Groq AI API (free tier, fast!) — export GROQ_API_KEY=<your-key> */
+#define GROQ_HOST    "api.groq.com"
+#define GROQ_PORT    443
+#define GROQ_MODEL   "llama-3.3-70b-versatile"
+
 /* ============== Global Variables ============== */
 
 extern volatile sig_atomic_t keep_running;
@@ -181,6 +194,9 @@ int receive_response(int sockfd, char *buffer, size_t buffer_size);
 int fetch_stock_quote(const char *symbol, char *response, size_t response_size);
 int fetch_company_profile(const char *symbol, char *response, size_t response_size);
 void close_connection(int sockfd);
+int make_https_post(const char *host, const char *path_query,
+                    const char *json_body,
+                    char *response, size_t response_size);
 
 /* parser.c */
 int parse_stock_quote(const char *json, StockData *stock);
@@ -213,6 +229,16 @@ double calculate_moving_average(PriceHistory *history, int periods);
 double calculate_volatility(PriceHistory *history);
 double calculate_momentum(PriceHistory *history);
 void print_ai_insight(AIInsight *insight, const char *symbol);
+
+/* ai_insights.c */
+int gemini_analyze_stock(const char *symbol, StockData *stock,
+                         AIInsight *insight,
+                         char *response_buf, size_t size);
+int groq_market_overview(StockData *stocks, int count,
+                         char *response_buf, size_t size);
+int groq_analyze_single_stock(const char *symbol, StockData *stock,
+                              char *response_buf, size_t size);
+int fetch_and_display_insight(const char *symbol);
 
 /* utils.c */
 void get_current_time_string(char *buffer, size_t size);
