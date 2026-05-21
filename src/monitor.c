@@ -282,19 +282,11 @@ static int get_simulated_us_stock(const char *symbol, StockData *stock) {
 
     for (i = 0; i < US_STOCK_COUNT; i++) {
         if (strcasecmp(symbol, US_STOCK_DATA[i].symbol) == 0) {
-            if (is_market_open()) {
-                /* Market open: vary price each refresh */
-                gettimeofday(&tv, NULL);
-                srand((unsigned int)(tv.tv_sec * 1000 + tv.tv_usec / 1000)
-                      + (unsigned int)i * 31337);
-            } else {
-                /* Market closed: fix price for the entire calendar day */
-                time_t t = time(NULL);
-                struct tm *lt = localtime(&t);
-                srand((unsigned int)(lt->tm_year * 10000 + lt->tm_mon * 100 + lt->tm_mday)
-                      + (unsigned int)i * 31337);
-            }
-            variation = ((rand() % 100) - 50) / 10000.0; /* ±0.5% */
+            /* Always vary price each refresh for demo purposes */
+            gettimeofday(&tv, NULL);
+            srand((unsigned int)(tv.tv_sec * 1000 + tv.tv_usec / 1000)
+                  + (unsigned int)i * 31337);
+            variation = ((rand() % 400) - 200) / 10000.0; /* ±2% like Indian stocks */
 
             strncpy(stock->symbol, symbol, MAX_SYMBOL_LENGTH - 1);
             strncpy(stock->name, US_STOCK_DATA[i].name, MAX_COMPANY_NAME - 1);
@@ -819,27 +811,15 @@ static void fetch_stock_child(const char *symbol, int write_fd) {
                 stock.valid = 1;
         }
     } else {
-        /* Get real LTP from Finnhub (rate-limited; simulation is the fallback) */
-        double real_ltp = 0.0;
-        if (fetch_stock_quote(symbol, response, sizeof(response)) == 0) {
-            StockData api_stock;
-            memset(&api_stock, 0, sizeof(StockData));
-            if (parse_stock_quote(response, &api_stock) == 0)
-                real_ltp = api_stock.current_price;
-        }
-        /* Simulation provides change%, high, low, open, name */
+        /* Use simulated data for US stocks (always varies for demo) */
         if (get_simulated_us_stock(symbol, &stock) == 0) {
-            if (real_ltp > 0) {
-                /* Overlay real price; recompute change relative to simulated close */
-                stock.current_price  = real_ltp;
-                stock.change         = real_ltp - stock.previous_close;
-                stock.change_percent = (stock.change / stock.previous_close) * 100.0;
-            }
             stock.valid = 1;
         } else {
-            /* Symbol not in simulation table — use API result directly */
-            if (parse_stock_quote(response, &stock) == 0)
-                stock.valid = 1;
+            /* Symbol not in simulation table — try API as fallback */
+            if (fetch_stock_quote(symbol, response, sizeof(response)) == 0) {
+                if (parse_stock_quote(response, &stock) == 0)
+                    stock.valid = 1;
+            }
         }
     }
 
@@ -995,14 +975,10 @@ int fetch_and_display_multiple(char symbols[][MAX_SYMBOL_LENGTH],
             /* Update price histories and persist to mmap */
             for (i = 0; i < count; i++) {
                 if (stocks[i].valid) {
-                    int market_live = is_indian_stock(stocks[i].symbol)
-                                      ? is_indian_market_open()
-                                      : is_market_open();
-                    if (market_live) {
-                        add_price(&price_histories[i], stocks[i].current_price);
-                        if (hist_file != NULL)
-                            history_save(hist_file, symbols[i], &price_histories[i]);
-                    }
+                    /* Always add price for demo purposes (charts always update) */
+                    add_price(&price_histories[i], stocks[i].current_price);
+                    if (hist_file != NULL)
+                        history_save(hist_file, symbols[i], &price_histories[i]);
                 }
             }
         }
