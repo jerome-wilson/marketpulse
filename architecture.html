@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarketPulse - System Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #1a1a2e;
+            margin-bottom: 30px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-top: -20px;
+            margin-bottom: 30px;
+        }
+        
+        /* User Box */
+        .user-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 0 auto 20px;
+            max-width: 400px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .user-box .label {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .user-box .command {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+        
+        /* Arrow */
+        .arrow {
+            text-align: center;
+            font-size: 30px;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        /* Main Program Box */
+        .main-box {
+            border: 3px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            background: #fafafa;
+        }
+        
+        .main-box-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        /* Module Row */
+        .module-row {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        /* Module Box */
+        .module {
+            flex: 1;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .module .name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .module .syscalls {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+        
+        /* Module Colors */
+        .network {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .monitor {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .alert {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: #333;
+        }
+        
+        .parser {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+        
+        .history {
+            background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
+            color: #333;
+        }
+        
+        .ai {
+            background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            color: #333;
+        }
+        
+        /* Small Arrow */
+        .small-arrow {
+            text-align: center;
+            font-size: 20px;
+            color: #999;
+            margin: 8px 0;
+        }
+        
+        .small-arrow-row {
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .small-arrow-row span {
+            flex: 1;
+            text-align: center;
+            font-size: 20px;
+            color: #999;
+        }
+        
+        /* Terminal Box */
+        .terminal-box {
+            background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 0 auto;
+            max-width: 500px;
+            box-shadow: 0 4px 15px rgba(44, 62, 80, 0.4);
+        }
+        
+        .terminal-box .label {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .terminal-box .syscalls {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+        
+        /* Legend */
+        .legend {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .legend-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .legend-color.network-c { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .legend-color.monitor-c { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .legend-color.alert-c { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .legend-color.ai-c { background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">MarketPulse - System Architecture</div>
+        <div class="subtitle">AI-Powered Real-Time Stock Monitoring Engine</div>
+        
+        <!-- User Box -->
+        <div class="user-box">
+            <div class="label">👤 User (CLI)</div>
+            <div class="command">./marketpulse watch AAPL MSFT GOOGL</div>
+        </div>
+        
+        <div class="arrow">▼</div>
+        
+        <!-- Main Program Box -->
+        <div class="main-box">
+            <div class="main-box-title">📦 MarketPulse (C Program)</div>
+            
+            <!-- Top Row - Processing Modules -->
+            <div class="module-row">
+                <div class="module network">
+                    <div class="name">🌐 Network Module</div>
+                    <div class="syscalls">
+                        socket()<br>
+                        connect()<br>
+                        SSL_connect()
+                    </div>
+                </div>
+                <div class="module monitor">
+                    <div class="name">⚙️ Monitor Engine</div>
+                    <div class="syscalls">
+                        fork()<br>
+                        pipe()<br>
+                        waitpid()
+                    </div>
+                </div>
+                <div class="module alert">
+                    <div class="name">🔔 Alert Engine</div>
+                    <div class="syscalls">
+                        signal()<br>
+                        sigaction()<br>
+                        alarm()
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Arrows -->
+            <div class="small-arrow-row">
+                <span>▼</span>
+                <span>▼</span>
+                <span>▼</span>
+            </div>
+            
+            <!-- Bottom Row - Data Modules -->
+            <div class="module-row">
+                <div class="module parser">
+                    <div class="name">📄 Data Parser</div>
+                    <div class="syscalls">
+                        JSON parsing<br>
+                        Data extraction
+                    </div>
+                </div>
+                <div class="module history">
+                    <div class="name">💾 History Module</div>
+                    <div class="syscalls">
+                        mmap()<br>
+                        msync()
+                    </div>
+                </div>
+                <div class="module ai">
+                    <div class="name">🤖 AI Module</div>
+                    <div class="syscalls">
+                        Groq API<br>
+                        Llama 3.3
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arrow">▼</div>
+        
+        <!-- Terminal Box -->
+        <div class="terminal-box">
+            <div class="label">🖥️ Terminal Display</div>
+            <div class="syscalls">tcgetattr() | tcsetattr() | select()</div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-title">System Calls by Category:</div>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color network-c"></div>
+                    <span>Network: socket(), connect()</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color monitor-c"></div>
+                    <span>Process: fork(), pipe(), waitpid()</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color alert-c"></div>
+                    <span>Signals: signal(), alarm()</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color ai-c"></div>
+                    <span>Memory: mmap(), msync()</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
