@@ -24,7 +24,7 @@
 [![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://www.linux.org/)
 [![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 
-*A System Programming Project demonstrating fork(), socket(), signal(), mmap(), and more*
+*A System Programming Project*
 
 </div>
 
