@@ -1,0 +1,312 @@
+═══════════════════════════════════════════════════════════════
+                    SLIDE 1: TITLE
+═══════════════════════════════════════════════════════════════
+
+MarketPulse
+AI-Powered Real-Time Stock Monitoring & Insight Engine
+
+Jerome Wilson
+System Programming Project - 2026
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 2: PROBLEM STATEMENT
+═══════════════════════════════════════════════════════════════
+
+The Problem
+
+• No lightweight terminal-based stock monitoring tools
+• Existing tools require expensive subscriptions
+• Lack of real-time alerts for price movements
+• No AI-powered trading insights in CLI tools
+• Cannot monitor multiple markets (US & India) simultaneously
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 3: CHALLENGES FACED
+═══════════════════════════════════════════════════════════════
+
+Challenges Faced
+
+• High latency in fetching real-time stock data
+• API rate limiting from financial data providers
+• Complex SSL/TLS handshaking for secure connections
+• Parsing nested JSON responses efficiently
+• Managing multiple concurrent stock fetches
+• Providing meaningful AI insights without overwhelming users
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 4: OBJECTIVES
+═══════════════════════════════════════════════════════════════
+
+Objectives of MarketPulse
+
+Primary Goal:
+Build an AI-assisted stock monitoring system demonstrating
+core system programming concepts with real trading value.
+
+Features Targeted:
+• Real-time stock price fetching
+• Multi-stock watch mode with live updates
+• AI-powered technical analysis
+• Price alert system with signal handling
+• Indian market (NIFTY50) support
+• US market (S&P 500) support
+• Persistent price history
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 5: TECHNOLOGIES USED
+═══════════════════════════════════════════════════════════════
+
+Technologies Used
+
+• C Programming Language
+• Linux/macOS System Calls
+• Process Management: fork(), waitpid()
+• Inter-Process Communication: pipe()
+• Network Programming: socket(), connect()
+• Signal Handling: signal(), sigaction()
+• Memory Mapping: mmap(), msync()
+• I/O Multiplexing: select()
+• SSL/TLS: OpenSSL library
+• AI Integration: Groq API (Llama 3.3)
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 6: SYSTEM ARCHITECTURE
+═══════════════════════════════════════════════════════════════
+
+System Architecture
+
+    User (CLI)
+         │
+         ▼
+    MarketPulse (C Program)
+         │
+    ┌────┼────┬────┐
+    ▼    ▼    ▼    ▼
+Network Monitor Alert  AI
+Module  Engine Engine Module
+    │    │    │    │
+    ▼    ▼    ▼    ▼
+socket fork() signal() Groq
+SSL   pipe() alarm()  API
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 7: STEP-BY-STEP WORKING
+═══════════════════════════════════════════════════════════════
+
+Step-by-Step Working
+
+1. User enters command (e.g., ./marketpulse watch AAPL)
+2. CLI parser interprets the command
+3. Network module establishes SSL connection to Finnhub API
+4. Stock data fetched using socket() and SSL_read()
+5. JSON response parsed to extract price data
+6. For multiple stocks, fork() creates parallel processes
+7. Data transferred via pipe() to parent process
+8. Display engine renders table with sparkline charts
+9. AI module analyzes data and provides insights
+10. Alert engine monitors thresholds using signals
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 8: CORE COMPONENTS
+═══════════════════════════════════════════════════════════════
+
+Core Components
+
+• Network Module    - socket(), connect(), SSL_connect()
+• JSON Parser       - Custom lightweight parser
+• Monitor Engine    - fork(), pipe(), waitpid()
+• Alert Engine      - signal(), sigaction(), alarm()
+• AI Insight Module - Groq API integration
+• History Module    - mmap(), msync() for persistence
+• Stream Module     - mkfifo() for live data
+• Terminal Control  - tcgetattr(), tcsetattr()
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 9: SYSTEM CALLS USED
+═══════════════════════════════════════════════════════════════
+
+System Calls Used
+
+• fork()      - Create child processes for parallel fetching
+• pipe()      - Inter-process communication for data transfer
+• waitpid()   - Synchronize parent-child processes
+• socket()    - Create network connections to APIs
+• connect()   - Establish TCP connections
+• select()    - I/O multiplexing for non-blocking input
+• signal()    - Handle SIGINT for graceful shutdown
+• sigaction() - Advanced signal handling for alerts
+• alarm()     - Timer-based periodic price checking
+• mmap()      - Memory-mapped files for persistent history
+• msync()     - Sync memory to disk
+• mkfifo()    - Named pipes for live JSON streaming
+• tcgetattr() - Get terminal attributes for raw mode
+• tcsetattr() - Set terminal for keyboard controls
+• kill()      - Send signals to background processes
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 10: KEY FEATURES
+═══════════════════════════════════════════════════════════════
+
+Key Features
+
+1. Single Stock Fetch
+   Command: ./marketpulse AAPL
+   • Real-time price with AI insights
+
+2. Multi-Stock Watch Mode
+   Command: ./marketpulse watch AAPL MSFT GOOGL
+   • Parallel fetching with fork/pipe
+
+3. Price Alert System
+   Command: ./marketpulse alert TSLA 200
+   • Signal-based threshold monitoring
+
+4. Top Market Movers
+   Command: ./marketpulse movers
+   • Top gainers and losers with AI analysis
+
+5. AI Deep Analysis
+   Command: ./marketpulse insight NVDA
+   • Comprehensive technical analysis
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 11: AI-POWERED FEATURES
+═══════════════════════════════════════════════════════════════
+
+AI-Powered Features (Groq API + Llama 3.3)
+
+Single Stock AI:
+• Trend assessment (Bullish/Bearish/Neutral)
+• Support and resistance levels
+• Trading suggestions
+• Automatic with every fetch - no extra command needed
+
+Market Overview AI:
+• Overall market sentiment
+• Top performers analysis
+• Actionable trading advice
+• Press 'I' in watch mode for market-wide insights
+
+Technical Analysis:
+• Moving Averages (MA5, MA10)
+• RSI (Relative Strength Index)
+• Volatility percentage
+• Golden Cross / Death Cross signal detection
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 12: MARKET SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Market Support
+
+US Market (S&P 500):
+• Command: ./marketpulse watch sp500
+• Stocks: AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA
+• USD currency ($), EST/EDT timezone
+• NYSE/NASDAQ market hours
+
+Indian Market (NIFTY50):
+• Command: ./marketpulse watch nifty50
+• Stocks: RELIANCE.BSE, TCS.BSE, HDFCBANK.BSE, INFY.BSE
+• INR currency (₹), IST timezone
+• NSE/BSE market hours
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 13: TERMINAL UI
+═══════════════════════════════════════════════════════════════
+
+Terminal UI & User Experience
+
+Keyboard Controls:
+• Q - Quit monitoring
+• S - Sort by change percentage
+• I - Show AI market insights
+• P - Pause/Resume updates
+• + - Faster refresh rate
+• - - Slower refresh rate
+
+Visual Features:
+• Color-coded price changes (green/red)
+• Sparkline charts for price history
+• Trend arrows (▲/▼)
+• Market status indicators
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 14: CHALLENGES & SOLUTIONS
+═══════════════════════════════════════════════════════════════
+
+Challenges & Solutions
+
+Challenge              Solution
+─────────────────────────────────────────────────
+API Rate Limiting  →   Staggered requests with usleep()
+SSL/TLS Setup      →   OpenSSL integration
+JSON Parsing       →   Custom lightweight parser
+Process Sync       →   Proper waitpid() handling
+Keyboard Input     →   select() + raw terminal mode
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 15: DEMO COMMANDS
+═══════════════════════════════════════════════════════════════
+
+Demo Commands Reference
+
+./marketpulse AAPL              - Single US stock with AI
+./marketpulse TCS.BSE           - Single Indian stock with AI
+./marketpulse watch AAPL MSFT   - Watch multiple stocks
+./marketpulse watch sp500       - Watch S&P 500 top 10
+./marketpulse watch nifty50     - Watch NIFTY50 stocks
+./marketpulse insight NVDA      - Deep AI analysis
+./marketpulse movers            - Top market movers
+./marketpulse alert TSLA 200    - Set price alert
+./marketpulse status            - System status
+./marketpulse --help            - Show all commands
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 16: CONCLUSION
+═══════════════════════════════════════════════════════════════
+
+Conclusion
+
+Key Achievements:
+• Implemented 10+ system calls (fork, pipe, socket, signal, mmap)
+• Parallel processing with fork/pipe architecture
+• Signal-based alert system with graceful shutdown
+• AI integration for intelligent trading insights
+• Dual market support (US & India)
+• Intuitive terminal-based UI with keyboard controls
+
+"System programming becomes truly powerful
+ when it solves real-world problems."
+
+
+═══════════════════════════════════════════════════════════════
+                    SLIDE 17: THANK YOU
+═══════════════════════════════════════════════════════════════
+
+Thank You
+
+GitHub: github.com/jerome-wilson/marketpulse
+
+Technologies: C, Linux System Calls, OpenSSL, Groq AI
+
+Key System Calls:
+fork() | pipe() | socket() | signal() | mmap() | select()
+
+Jerome Wilson
+System Programming Project - 2026
