@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarketPulse - Systems Programming Project Report</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2.5cm;
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #000;
+            max-width: 21cm;
+            margin: 0 auto;
+            padding: 2cm;
+            background: white;
+        }
+        
+        .cover-page {
+            text-align: center;
+            page-break-after: always;
+            padding-top: 30%;
+        }
+        
+        .cover-title {
+            font-size: 36pt;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .cover-subtitle {
+            font-size: 16pt;
+            margin-bottom: 40px;
+        }
+        
+        .cover-report-type {
+            font-size: 14pt;
+            margin-bottom: 60px;
+        }
+        
+        .cover-author {
+            font-size: 14pt;
+            margin-top: 100px;
+        }
+        
+        .toc-page {
+            page-break-after: always;
+        }
+        
+        .toc-title {
+            font-size: 18pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toc-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        
+        .section-divider {
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            margin: 60px 0 30px 0;
+            page-break-before: always;
+        }
+        
+        .page-header {
+            text-align: right;
+            font-size: 10pt;
+            color: #666;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .page-footer {
+            text-align: center;
+            font-size: 10pt;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+            margin-top: 20px;
+        }
+        
+        h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        h2 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        h3 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            text-align: justify;
+            margin-bottom: 12px;
+        }
+        
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 12px;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .code-block {
+            font-family: 'Courier New', monospace;
+            font-size: 10pt;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        
+        .architecture-diagram {
+            font-family: 'Courier New', monospace;
+            font-size: 9pt;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 15px 0;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        
+        .highlight {
+            background-color: #ffffcc;
+            padding: 2px 5px;
+        }
+        
+        .page-break {
+            page-break-after: always;
+        }
+        
+        .center {
+            text-align: center;
+        }
+        
+        .quote {
+            font-style: italic;
+            text-align: center;
+            margin: 20px 40px;
+            padding: 10px;
+            border-left: 3px solid #333;
+        }
+    </style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+    <div class="cover-title">MARKETPULSE</div>
+    <div class="cover-subtitle">AI-Powered Real-Time Stock Monitoring & Insight Engine</div>
+    <div class="cover-report-type">SYSTEMS PROGRAMMING PROJECT REPORT</div>
+    <div class="cover-author">
+        <strong>Done By,</strong><br><br>
+        Jerome Wilson
+    </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc-page">
+    <div class="toc-title">TABLE OF CONTENTS</div>
+    
+    <div class="toc-item"><span>1. ABSTRACT</span><span>1</span></div>
+    <div class="toc-item"><span>2. INTRODUCTION</span><span>2</span></div>
+    <div class="toc-item"><span>3. PROBLEM STATEMENT</span><span>3</span></div>
+    <div class="toc-item"><span>4. PROJECT OBJECTIVES</span><span>4</span></div>
+    <div class="toc-item"><span>5. SYSTEM ARCHITECTURE</span><span>5</span></div>
+    <div class="toc-item"><span>6. TECHNOLOGIES USED</span><span>6</span></div>
+    <div class="toc-item"><span>7. AI COMPONENTS</span><span>7</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;7.1 AI Integration Overview</span><span>7</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;7.2 Single Stock AI Analysis</span><span>8</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;7.3 Market Overview AI</span><span>9</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;7.4 Technical Analysis</span><span>10</span></div>
+    <div class="toc-item"><span>8. FEATURES AND FUNCTIONALITIES</span><span>11</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;8.1 Single Stock Fetch</span><span>11</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;8.2 Multi-Stock Watch Mode</span><span>12</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;8.3 Index Monitoring</span><span>13</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;8.4 Price Alert System</span><span>14</span></div>
+    <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;8.5 Keyboard Controls</span><span>15</span></div>
+    <div class="toc-item"><span>9. CORE CONCEPTS</span><span>16</span></div>
+    <div class="toc-item"><span>10. PROJECT WORKFLOW</span><span>17</span></div>
+    <div class="toc-item"><span>11. CHALLENGES</span><span>18</span></div>
+    <div class="toc-item"><span>12. PROJECT AND AI</span><span>20</span></div>
+    <div class="toc-item"><span>13. FUTURE ENHANCEMENTS</span><span>22</span></div>
+    <div class="toc-item"><span>14. APPLICATIONS</span><span>23</span></div>
+    <div class="toc-item"><span>15. CONCLUSION</span><span>24</span></div>
+</div>
+
+<!-- ABSTRACT SECTION DIVIDER -->
+<div class="section-divider">ABSTRACT</div>
+
+<!-- PAGE 1 -->
+<div class="page-header">MarketPulse</div>
+
+<h1>1.1 ABSTRACT OF THE PROJECT</h1>
+
+<p>MarketPulse is an AI-powered real-time stock monitoring and insight engine developed as a comprehensive systems programming project. The application is specifically designed for developers, students, and retail investors who require a lightweight, efficient, terminal-based tool to track stock markets without the overhead of expensive graphical applications, subscription-based services, or browser-based platforms that disrupt workflow. In today's fast-paced financial markets, access to real-time stock information is crucial for making informed investment decisions, yet traditional stock monitoring tools present significant barriers including high costs (professional terminals like Bloomberg cost upwards of $20,000 annually), complex setup requirements, and the need to switch contexts away from terminal-based development environments.</p>
+
+<p>MarketPulse addresses these challenges by providing a terminal-native application that fetches real-time stock prices from the Finnhub financial API, monitors multiple stocks simultaneously using parallel processing with fork() and pipe() system calls, detects price movements and triggers alerts using Unix signal handling mechanisms (SIGINT, SIGALRM, SIGCHLD), and generates intelligent AI-powered trading insights using the Groq API with the Llama 3.3 70B Versatile model. The parallel fetching architecture reduces data retrieval time by approximately 10x compared to sequential fetching, enabling responsive real-time monitoring of multiple stocks. The AI integration provides automatic trend assessment (Bullish/Bearish/Neutral), support and resistance level identification, trading suggestions, and market sentiment analysis without requiring users to leave the terminal environment.</p>
+
+<p>The project combines network programming (socket(), connect(), SSL/TLS encryption via OpenSSL), process management (fork(), pipe(), waitpid() for parallel execution and inter-process communication), signal handling (signal(), sigaction(), alarm() for graceful shutdown and timer-based alerts), memory-mapped files (mmap(), msync() for persistent price history), terminal control (tcgetattr(), tcsetattr() for raw mode keyboard input), and I/O multiplexing (select() for non-blocking user interaction) into a single integrated platform. This comprehensive implementation demonstrates advanced system programming concepts including process creation and synchronization, inter-process communication, network socket programming, signal-driven event handling, and memory-mapped I/O, while providing practical trading value through real-time market data, visual sparkline charts, color-coded trend indicators, and AI-generated insights. The application supports both US markets (S&P 500 stocks via NYSE/NASDAQ) and Indian markets (NIFTY50 stocks via NSE/BSE) with automatic currency detection and timezone-aware market status display.</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 1</div>
+
+<!-- INTRODUCTION SECTION DIVIDER -->
+<div class="section-divider">INTRODUCTION</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>2.1 INTRODUCTION TO THE PROJECT</h1>
+
+<p>Stock market monitoring is essential for investors, traders, and financial analysts. However, existing tools present significant challenges for various user groups:</p>
+
+<h3>For Developers and System Administrators:</h3>
+<ul>
+    <li>Working primarily in terminals, switching to browser-based tools breaks workflow</li>
+    <li>No way to monitor stocks while coding or deploying</li>
+    <li>Existing CLI tools require manual JSON parsing</li>
+</ul>
+
+<h3>For Retail Investors:</h3>
+<ul>
+    <li>Professional tools like Bloomberg Terminal cost $20,000+/year</li>
+    <li>Free tools are cluttered with ads and unnecessary features</li>
+    <li>No real-time alerts for price movements</li>
+</ul>
+
+<h3>For Students:</h3>
+<ul>
+    <li>Learning system programming concepts through practical applications</li>
+    <li>Understanding process management, IPC, and network programming</li>
+    <li>Gaining exposure to AI integration in systems software</li>
+</ul>
+
+<p>MarketPulse was developed to eliminate these barriers by introducing a terminal-native stock monitoring solution with AI-assisted insights and real-time alerts.</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 2</div>
+
+<!-- PROBLEM STATEMENT SECTION DIVIDER -->
+<div class="section-divider">PROBLEM STATEMENT</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>3.1 PROBLEM STATEMENT OF THE PROJECT</h1>
+
+<p>Traditional stock monitoring solutions are not designed with developers and terminal users as a primary concern.</p>
+
+<h3>Major Limitations Include:</h3>
+
+<h3>Accessibility Challenges</h3>
+<ul>
+    <li>Heavy dependence on graphical interfaces</li>
+    <li>Expensive subscription requirements</li>
+    <li>Complex setup and configuration</li>
+    <li>No terminal-based solutions</li>
+</ul>
+
+<h3>Technical Challenges</h3>
+<ul>
+    <li>Sequential data fetching is slow for multiple stocks</li>
+    <li>API rate limiting from financial data providers</li>
+    <li>Complex SSL/TLS handshaking for secure connections</li>
+    <li>No persistent price history across sessions</li>
+</ul>
+
+<h3>User Experience Challenges</h3>
+<ul>
+    <li>Raw JSON output is hard to read</li>
+    <li>No visual indicators for trends</li>
+    <li>No keyboard controls for interaction</li>
+    <li>Blocking I/O prevents responsive UI</li>
+</ul>
+
+<p>MarketPulse aims to solve these issues by enabling users to monitor stocks directly from the terminal with parallel fetching, AI insights, and real-time alerts.</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 3</div>
+
+<!-- PROJECT OBJECTIVES SECTION DIVIDER -->
+<div class="section-divider">PROJECT OBJECTIVES</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>4.1 OBJECTIVES OF THE PROJECT</h1>
+
+<h3>Primary Objective</h3>
+<p>To develop an AI-assisted stock monitoring system that demonstrates core system programming concepts while providing real trading value to developers, students, and retail investors.</p>
+
+<h3>Secondary Objectives</h3>
+<ul>
+    <li>Provide real-time stock price fetching from external APIs</li>
+    <li>Enable multi-stock monitoring with parallel processing</li>
+    <li>Offer AI-powered technical analysis and trading insights</li>
+    <li>Implement price alert system with signal handling</li>
+    <li>Support both US (S&P 500) and Indian (NIFTY50) markets</li>
+    <li>Maintain persistent price history using memory-mapped files</li>
+    <li>Create intuitive terminal UI with keyboard controls</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 4</div>
+
+<!-- SYSTEM ARCHITECTURE SECTION DIVIDER -->
+<div class="section-divider">SYSTEM ARCHITECTURE</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>5.1 ARCHITECTURE</h1>
+
+<div class="architecture-diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                         USER (CLI)                               │
+│              ./marketpulse watch AAPL MSFT GOOGL                │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      CLI PARSER (cli.c)                          │
+│                 Command interpretation and routing               │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+            ┌───────────────┼───────────────┐
+            │               │               │
+            ▼               ▼               ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│    NETWORK    │  │    MONITOR    │  │     ALERT     │
+│    MODULE     │  │    ENGINE     │  │    ENGINE     │
+│               │  │               │  │               │
+│  socket()     │  │   fork()      │  │  signal()     │
+│  connect()    │  │   pipe()      │  │  sigaction()  │
+│  SSL_*()      │  │   waitpid()   │  │  alarm()      │
+└───────┬───────┘  └───────┬───────┘  └───────┬───────┘
+        │                  │                  │
+        ▼                  ▼                  ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│  DATA PARSER  │  │    HISTORY    │  │      AI       │
+│               │  │    MODULE     │  │    MODULE     │
+│  JSON parsing │  │   mmap()      │  │  Groq API     │
+│  Data extract │  │   msync()     │  │  Llama 3.3    │
+└───────────────┘  └───────────────┘  └───────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    TERMINAL DISPLAY (utils.c)                    │
+│  tcgetattr() / tcsetattr() - Raw terminal mode                  │
+│  select() - Non-blocking keyboard input                         │
+└─────────────────────────────────────────────────────────────────┘
+</div>
+
+<h2>5.2 Layer Description</h2>
+
+<p><strong>Input Layer:</strong> User CLI commands and keyboard input during monitoring</p>
+
+<p><strong>Processing Layer:</strong> CLI parsing, network communication, parallel stock fetching with fork/pipe, signal-based alert monitoring</p>
+
+<p><strong>Data Layer:</strong> JSON parsing for API responses, memory-mapped price history, AI insight generation</p>
+
+<p><strong>Output Layer:</strong> Terminal UI with colors and charts, sparkline price visualization</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 5</div>
+
+<!-- TECHNOLOGIES USED SECTION DIVIDER -->
+<div class="section-divider">TECHNOLOGIES USED</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>6.1 TECHNOLOGIES USED</h1>
+
+<table>
+    <tr>
+        <th>Technology</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td>C Programming</td>
+        <td>Core implementation</td>
+    </tr>
+    <tr>
+        <td>Linux/macOS System Calls</td>
+        <td>Process and file management</td>
+    </tr>
+    <tr>
+        <td>OpenSSL</td>
+        <td>HTTPS/TLS encryption</td>
+    </tr>
+    <tr>
+        <td>Finnhub API</td>
+        <td>Real-time stock data</td>
+    </tr>
+    <tr>
+        <td>Groq API</td>
+        <td>AI-powered insights</td>
+    </tr>
+    <tr>
+        <td>Llama 3.3 Model</td>
+        <td>Natural language analysis</td>
+    </tr>
+    <tr>
+        <td>fork()</td>
+        <td>Process creation for parallel fetching</td>
+    </tr>
+    <tr>
+        <td>pipe()</td>
+        <td>Inter-process communication</td>
+    </tr>
+    <tr>
+        <td>waitpid()</td>
+        <td>Process synchronization</td>
+    </tr>
+    <tr>
+        <td>socket()</td>
+        <td>Network socket creation</td>
+    </tr>
+    <tr>
+        <td>connect()</td>
+        <td>TCP connection establishment</td>
+    </tr>
+    <tr>
+        <td>signal() / sigaction()</td>
+        <td>Signal handling</td>
+    </tr>
+    <tr>
+        <td>alarm()</td>
+        <td>Timer-based alerts</td>
+    </tr>
+    <tr>
+        <td>mmap() / msync()</td>
+        <td>Memory-mapped file persistence</td>
+    </tr>
+    <tr>
+        <td>select()</td>
+        <td>I/O multiplexing</td>
+    </tr>
+    <tr>
+        <td>tcgetattr() / tcsetattr()</td>
+        <td>Terminal raw mode</td>
+    </tr>
+</table>
+
+<p>MarketPulse extensively utilizes Linux process management concepts including fork-exec architecture, IPC mechanisms, and signal handling.</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 6</div>
+
+<!-- AI COMPONENTS SECTION DIVIDER -->
+<div class="section-divider">AI COMPONENTS</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>7.1 AI INTEGRATION OVERVIEW</h1>
+
+<p>MarketPulse integrates artificial intelligence through the Groq API, utilizing the Llama 3.3 70B Versatile model for intelligent stock analysis and trading insights.</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 7</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>7.2 SINGLE STOCK AI ANALYSIS</h1>
+
+<p>When fetching a single stock, MarketPulse automatically generates AI-powered insights.</p>
+
+<p><strong>Example:</strong></p>
+<div class="code-block">Command: ./marketpulse AAPL
+
+AI Commentary:
+AAPL shows bullish momentum with price above key moving averages.
+Support at $185, resistance at $195. Consider holding or adding
+on dips below $187.</div>
+
+<p><strong>Features:</strong></p>
+<ul>
+    <li>Trend assessment (Bullish/Bearish/Neutral)</li>
+    <li>Support and resistance levels</li>
+    <li>Trading suggestions</li>
+    <li>Automatic with every fetch - no extra command needed</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 8</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>7.3 MARKET OVERVIEW AI</h1>
+
+<p>Press 'I' in watch mode to get AI-powered market analysis.</p>
+
+<p><strong>Features:</strong></p>
+<ul>
+    <li>Overall market sentiment</li>
+    <li>Top performers analysis</li>
+    <li>Actionable trading advice</li>
+    <li>Market-wide insights across all watched stocks</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 9</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>7.4 TECHNICAL ANALYSIS</h1>
+
+<p>MarketPulse performs technical analysis including:</p>
+<ul>
+    <li>Moving Averages (MA5, MA10)</li>
+    <li>RSI (Relative Strength Index)</li>
+    <li>Volatility percentage</li>
+    <li>Golden Cross / Death Cross signal detection</li>
+</ul>
+
+<h2>7.5 Deep Analysis Mode</h2>
+
+<div class="code-block">Command: ./marketpulse insight NVDA</div>
+
+<p>Provides comprehensive technical analysis with detailed AI commentary and signal detection.</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 10</div>
+
+<!-- FEATURES SECTION DIVIDER -->
+<div class="section-divider">FEATURES AND FUNCTIONALITIES</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>8.1 SINGLE STOCK FETCH</h1>
+
+<div class="code-block">./marketpulse AAPL</div>
+
+<p><strong>Features:</strong></p>
+<ul>
+    <li>Real-time price from Finnhub API</li>
+    <li>Price change (absolute and percentage)</li>
+    <li>Open, High, Low, Previous Close</li>
+    <li>Automatic AI-powered insights</li>
+    <li>Market status (OPEN/CLOSED)</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 11</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>8.2 MULTI-STOCK WATCH MODE</h1>
+
+<div class="code-block">./marketpulse watch AAPL MSFT GOOGL</div>
+
+<p><strong>Features:</strong></p>
+<ul>
+    <li>Parallel fetching using fork() and pipe()</li>
+    <li>Real-time updates every 5 seconds</li>
+    <li>Sparkline charts showing price history</li>
+    <li>Color-coded trend indicators (green/red)</li>
+    <li>Keyboard controls (Q, S, P, +, -)</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 12</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>8.3 INDEX MONITORING</h1>
+
+<div class="code-block">./marketpulse watch sp500    # US S&P 500 stocks
+./marketpulse watch nifty50  # Indian NIFTY50 stocks</div>
+
+<p><strong>Features:</strong></p>
+<ul>
+    <li>Predefined stock groups</li>
+    <li>Automatic currency detection ($ or ₹)</li>
+    <li>Timezone-aware market status</li>
+    <li>Regional market hours detection</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 13</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>8.4 PRICE ALERT SYSTEM</h1>
+
+<div class="code-block">./marketpulse alert AAPL 190</div>
+
+<p><strong>Features:</strong></p>
+<ul>
+    <li>Signal-based threshold monitoring</li>
+    <li>Visual terminal flash alerts</li>
+    <li>Audio bell notifications</li>
+    <li>Bidirectional threshold crossing detection</li>
+    <li>Graceful shutdown with Ctrl+C</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 14</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>8.5 KEYBOARD CONTROLS</h1>
+
+<table>
+    <tr>
+        <th>Key</th>
+        <th>Action</th>
+    </tr>
+    <tr>
+        <td>Q</td>
+        <td>Quit monitoring</td>
+    </tr>
+    <tr>
+        <td>S</td>
+        <td>Sort by change percentage</td>
+    </tr>
+    <tr>
+        <td>I</td>
+        <td>Show AI market insights</td>
+    </tr>
+    <tr>
+        <td>P</td>
+        <td>Pause/Resume updates</td>
+    </tr>
+    <tr>
+        <td>+</td>
+        <td>Faster refresh rate</td>
+    </tr>
+    <tr>
+        <td>-</td>
+        <td>Slower refresh rate</td>
+    </tr>
+    <tr>
+        <td>Esc</td>
+        <td>Close insights panel</td>
+    </tr>
+</table>
+
+<h2>8.6 Visual Features</h2>
+<ul>
+    <li>Color-coded price changes (green for up, red for down)</li>
+    <li>Sparkline charts using Unicode block elements (▁▂▃▄▅▆▇█)</li>
+    <li>Trend arrows (▲/▼)</li>
+    <li>Market status indicators</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 15</div>
+
+<!-- CORE CONCEPTS SECTION DIVIDER -->
+<div class="section-divider">CORE CONCEPTS</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>9.1 CORE LINUX CONCEPTS IMPLEMENTED</h1>
+
+<h3>Process Management</h3>
+<ul>
+    <li>fork() - Create child processes for parallel stock fetching</li>
+    <li>waitpid() - Synchronize parent-child processes, prevent zombies</li>
+    <li>exit() - Terminate child processes</li>
+</ul>
+
+<h3>Inter-Process Communication</h3>
+<ul>
+    <li>pipe() - Unidirectional data channel between processes</li>
+    <li>mkfifo() - Named pipes for external tool integration</li>
+</ul>
+
+<h3>Network Programming</h3>
+<ul>
+    <li>socket() - Create network communication endpoint</li>
+    <li>connect() - Establish TCP connection to API servers</li>
+    <li>getaddrinfo() - DNS resolution</li>
+</ul>
+
+<h3>Signal Handling</h3>
+<ul>
+    <li>signal() - Basic signal handling (SIGPIPE)</li>
+    <li>sigaction() - Advanced signal handling (SIGINT, SIGALRM, SIGCHLD)</li>
+    <li>alarm() - Timer-based periodic price checking</li>
+    <li>kill() - Send signals to background processes</li>
+</ul>
+
+<h3>Memory Management</h3>
+<ul>
+    <li>mmap() - Memory-mapped files for persistent price history</li>
+    <li>msync() - Synchronize memory to disk</li>
+</ul>
+
+<h3>Terminal Control</h3>
+<ul>
+    <li>tcgetattr() - Get terminal attributes</li>
+    <li>tcsetattr() - Set terminal to raw mode for immediate key response</li>
+</ul>
+
+<h3>I/O Multiplexing</h3>
+<ul>
+    <li>select() - Non-blocking keyboard input checking</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 16</div>
+
+<!-- PROJECT WORKFLOW SECTION DIVIDER -->
+<div class="section-divider">PROJECT WORKFLOW</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>10.1 PROJECT WORKFLOW</h1>
+
+<p><strong>Step 1:</strong> User enters command (e.g., ./marketpulse watch AAPL MSFT)</p>
+
+<p><strong>Step 2:</strong> CLI parser interprets command and extracts symbols</p>
+
+<p><strong>Step 3:</strong> Terminal switched to raw mode using tcsetattr()</p>
+
+<p><strong>Step 4:</strong> For each stock: socket() creates TCP endpoint, connect() establishes connection, SSL_connect() performs TLS handshake</p>
+
+<p><strong>Step 5:</strong> fork() creates child process for each stock, each child fetches independently via HTTPS, pipe() transfers data back to parent, waitpid() synchronizes all children</p>
+
+<p><strong>Step 6:</strong> JSON response parsed to extract price data, price added to mmap'd history file, msync() persists to disk</p>
+
+<p><strong>Step 7:</strong> Stock data sent to Groq API, Llama 3.3 generates trading insights, response parsed and formatted</p>
+
+<p><strong>Step 8:</strong> Clear screen with ANSI codes, render table with colors, draw sparkline charts, show trend indicators</p>
+
+<p><strong>Step 9:</strong> select() checks for input without blocking, handle Q/S/P/+/- keys, loop back to Step 5 after refresh interval</p>
+
+<p><strong>Step 10:</strong> Restore terminal settings, close mmap'd files, exit gracefully</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 17</div>
+
+<!-- CHALLENGES SECTION DIVIDER -->
+<div class="section-divider">CHALLENGES</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>11.1 CHALLENGES FACED DURING DEVELOPMENT</h1>
+
+<h2>Challenge 1: High Latency in Sequential Fetching</h2>
+
+<p><strong>Problem:</strong> Fetching 10 stocks sequentially took 10-15 seconds due to DNS resolution, TCP 3-way handshake, SSL/TLS handshake, and HTTP request/response.</p>
+
+<p><strong>Solution:</strong> Implemented parallel fetching using fork() and pipe():</p>
+
+<div class="code-block">for (int i = 0; i < stock_count; i++) {
+    pipe(pipes[i]);
+    pids[i] = fork();
+    if (pids[i] == 0) {
+        // Child fetches one stock
+        fetch_stock_quote(symbols[i], &stock);
+        write(pipes[i][1], &stock, sizeof(stock));
+        exit(0);
+    }
+}</div>
+
+<p><strong>Result:</strong> 10 stocks now fetch in ~1-2 seconds.</p>
+
+<h2>Challenge 2: API Rate Limiting</h2>
+
+<p><strong>Problem:</strong> Finnhub API limits requests to 60 calls/minute. With 10 stocks refreshing every 5 seconds, we exceeded the limit.</p>
+
+<p><strong>Solution:</strong></p>
+<ul>
+    <li>Staggered requests with usleep() between fetches</li>
+    <li>Implemented token bucket rate limiter</li>
+    <li>Added simulated data fallback when quota exhausted</li>
+    <li>Caching of recent responses</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 18</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h2>Challenge 3: SSL/TLS Complexity</h2>
+
+<p><strong>Problem:</strong> Financial APIs require HTTPS. In C, this requires OpenSSL library initialization, SSL context creation, certificate verification, and proper error handling (SSL errors don't set errno).</p>
+
+<p><strong>Solution:</strong> Created robust SSL wrapper functions with proper initialization, error handling, and cleanup to prevent memory leaks.</p>
+
+<h2>Challenge 4: JSON Parsing Without Libraries</h2>
+
+<p><strong>Problem:</strong> C has no built-in JSON parser. External libraries add dependencies.</p>
+
+<p><strong>Solution:</strong> Built custom lightweight JSON parser using string matching:</p>
+
+<div class="code-block">double extract_json_double(const char *json, const char *key) {
+    char search[64];
+    snprintf(search, sizeof(search), "\"%s\":", key);
+    char *pos = strstr(json, search);
+    if (pos) {
+        pos += strlen(search);
+        return atof(pos);
+    }
+    return 0.0;
+}</div>
+
+<h2>Challenge 5: Terminal Raw Mode and Keyboard Input</h2>
+
+<p><strong>Problem:</strong> Default terminal mode is line-buffered - user must press Enter for input. This prevents responsive keyboard controls.</p>
+
+<p><strong>Solution:</strong> Used tcsetattr() to switch to raw mode and select() for non-blocking input:</p>
+
+<div class="code-block">raw.c_lflag &= ~(ICANON | ECHO);
+tcsetattr(STDIN_FILENO, TCSANOW, &raw);</div>
+
+<div class="page-footer">Jerome Wilson | Page No. 19</div>
+
+<!-- PROJECT AND AI SECTION DIVIDER -->
+<div class="section-divider">PROJECT AND AI</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>12.1 PROJECT JOURNEY AND AI USAGE</h1>
+
+<p>A significant part of MarketPulse's development involved iterative design, debugging, optimization, and feature enhancement using AI-assisted development workflows.</p>
+
+<h2>AI Tools Used</h2>
+
+<h3>Cline (AI Development Assistant)</h3>
+<p>Used throughout the development process for:</p>
+<ul>
+    <li>Architecture planning and module design</li>
+    <li>Code generation and implementation</li>
+    <li>Debugging complex issues</li>
+    <li>Documentation generation</li>
+</ul>
+
+<h3>Groq API (Runtime AI)</h3>
+<p>Integrated into the application for:</p>
+<ul>
+    <li>Real-time stock analysis</li>
+    <li>Trading insight generation</li>
+    <li>Market sentiment analysis</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 20</div>
+
+<div class="page-break"></div>
+
+<div class="page-header">MarketPulse</div>
+
+<h2>AI Assistance Used For</h2>
+
+<h3>System Design</h3>
+<ul>
+    <li>Architecture planning</li>
+    <li>Module decomposition</li>
+    <li>System call selection</li>
+    <li>Data flow design</li>
+</ul>
+
+<h3>Feature Development</h3>
+<ul>
+    <li>Network module implementation</li>
+    <li>Parallel fetching with fork/pipe</li>
+    <li>Signal-based alert system</li>
+    <li>Memory-mapped history</li>
+    <li>Terminal UI rendering</li>
+</ul>
+
+<h3>Debugging</h3>
+<ul>
+    <li>Fork-related issues</li>
+    <li>SSL/TLS handshaking problems</li>
+    <li>JSON parsing edge cases</li>
+    <li>Race conditions in IPC</li>
+    <li>Terminal mode restoration</li>
+</ul>
+
+<h3>Documentation and Presentation</h3>
+<ul>
+    <li>Technical explanations</li>
+    <li>Project documentation</li>
+    <li>Presentation content</li>
+    <li>Architecture diagrams</li>
+</ul>
+
+<p>The final implementation, integration, testing, debugging, and feature customization were performed by the developer. AI assistance was used as a tool to accelerate development and improve code quality, but all design decisions, testing, and final implementation were done by the developer.</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 21</div>
+
+<!-- FUTURE ENHANCEMENTS SECTION DIVIDER -->
+<div class="section-divider">FUTURE ENHANCEMENTS</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>13.1 FUTURE ENHANCEMENTS</h1>
+
+<p>Planned features include:</p>
+
+<h3>WebSocket Support</h3>
+<ul>
+    <li>True real-time streaming instead of polling</li>
+    <li>Lower latency price updates</li>
+    <li>Reduced API calls</li>
+</ul>
+
+<h3>Portfolio Tracking</h3>
+<ul>
+    <li>Track owned stocks</li>
+    <li>Calculate profit/loss</li>
+    <li>Portfolio performance metrics</li>
+</ul>
+
+<h3>Multiple AI Models</h3>
+<ul>
+    <li>GPT-4 integration</li>
+    <li>Claude integration</li>
+    <li>Model comparison</li>
+</ul>
+
+<h3>Mobile Notifications</h3>
+<ul>
+    <li>Push notifications via services</li>
+    <li>SMS alerts for critical prices</li>
+    <li>Email notifications</li>
+</ul>
+
+<h3>Cryptocurrency Support</h3>
+<ul>
+    <li>Bitcoin, Ethereum monitoring</li>
+    <li>Crypto exchange integration</li>
+    <li>24/7 market support</li>
+</ul>
+
+<div class="page-footer">Jerome Wilson | Page No. 22</div>
+
+<!-- APPLICATIONS SECTION DIVIDER -->
+<div class="section-divider">APPLICATIONS</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>14.1 REAL-WORLD APPLICATIONS</h1>
+
+<p>MarketPulse can be used as:</p>
+
+<h3>Retail Investors</h3>
+<p>Quick terminal-based market monitoring without expensive subscriptions.</p>
+
+<h3>Day Traders</h3>
+<p>Real-time alerts and AI insights for trading decisions.</p>
+
+<h3>Developers</h3>
+<p>Monitor stocks while coding without leaving the terminal.</p>
+
+<h3>Students</h3>
+<p>Learning system programming concepts through practical application.</p>
+
+<h3>Quant Analysts</h3>
+<p>Building automated trading systems and analysis tools.</p>
+
+<h3>Financial Educators</h3>
+<p>Teaching market concepts with live data.</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 23</div>
+
+<!-- CONCLUSION SECTION DIVIDER -->
+<div class="section-divider">CONCLUSION</div>
+
+<div class="page-header">MarketPulse</div>
+
+<h1>15.1 CONCLUSION</h1>
+
+<p>MarketPulse successfully demonstrates how system programming concepts can be combined with modern AI to create a powerful, practical application.</p>
+
+<h3>Key Achievements:</h3>
+<ul>
+    <li>Implemented 15+ system calls (fork, pipe, socket, signal, mmap, select, etc.)</li>
+    <li>Parallel processing with fork/pipe architecture reduces fetch time by 10x</li>
+    <li>Signal-based alert system with graceful shutdown</li>
+    <li>AI integration using Groq API with Llama 3.3 for intelligent trading insights</li>
+    <li>Dual market support (US and India) with automatic currency/timezone detection</li>
+    <li>Intuitive terminal-based UI with keyboard controls and sparkline charts</li>
+    <li>Persistent price history using memory-mapped files</li>
+</ul>
+
+<p>The project transforms traditional stock monitoring into an intelligent, terminal-native experience that demonstrates the power of combining low-level system programming with modern AI capabilities.</p>
+
+<div class="quote">"System programming becomes truly powerful when it solves real-world problems."</div>
+
+<p class="center"><strong>Project Repository:</strong><br>
+<a href="https://github.com/jerome-wilson/marketpulse">MarketPulse GitHub Repository</a></p>
+
+<p class="center"><strong>Technologies:</strong> C, Linux System Calls, OpenSSL, Groq AI, Llama 3.3</p>
+
+<p class="center"><strong>Key System Calls:</strong> fork() | pipe() | socket() | signal() | mmap() | select()</p>
+
+<div class="page-footer">Jerome Wilson | Page No. 24</div>
+
+</body>
+</html>
